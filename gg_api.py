@@ -1,4 +1,5 @@
 # modified by john
+from __future__ import division
 import json
 import re
 import pprint
@@ -6,8 +7,9 @@ import nltk
 from lxml import html
 import requests
 
+
 stopwords = nltk.corpus.stopwords.words('english')
-commonUselessWords = ['award', 'http', 'rt', 'goldenglobes', 'goldenglobe', 'best', 'wins', 'win']
+commonUselessWords = ['award', 'http', 'rt', 'goldenglobes', 'goldenglobe', 'best', 'wins', 'win', 'of']
 uselessWords = [['demille', 'cecil', 'b'], ['drama', 'motion', 'picture', 'actress', 'actor']]
 
 OFFICIAL_AWARDS = ['cecil b. demille award',         # this is a special case, deal with it later
@@ -131,33 +133,41 @@ def get_nominees(year):
 
     foreignList = sorted(frequency.items(), key = lambda x:x[1], reverse = True)
     nominees[OFFICIAL_AWARDS[8]] = [ x[0] for x in foreignList[:5]]
+    print 'foreign', foreignList[:5]
     # ----------------------------------- end of foreign movie --------------------------------------
 
-    '''
-    # drama related movie
+    # --- start of drama movie ----------------------------------------------------------------------
     tweetsBuffer = []
-    nominees[OFFICIAL_AWARDS[1]] = []
-    for w in text:
-      if 'drama' in w[0] and 'television' not in w[1]:
-        tweetsBuffer.append(w[1].lower())
+    usefulMovies = []
+    for x in text:
+      if 'drama' in x[0] and 'television' not in x[1]:
+        tweetsBuffer.append(x)
 
-    wordsBuffer = []
+    for x in worldMovies:
+      if 'drama' in x[1]:
+        for y in tweetsBuffer:
+          if x[0][0] in y[1]:
+            usefulMovies.append(x)
+            break
+    
     frequency = {}
     for x in usefulMovies:
-      if 'drama' not in x[1]:
-        continue
-      total = 0
-      base = 0
+      total = 0;
+      base = 0;
       for y in nltk.word_tokenize(x[0][0]):
-        if y not in stopwords:
+        if y.isalpha() and y not in stopwords and y not in commonUselessWords and y not in uselessWords[1]:
           base+=1
-          for z in 
-          if x[0][0] in y:
-          wordsBuffer.append(x[0][0])
+          for z in tweetsBuffer:
+            if y in z[0]:
+              total+=1
+      if base != 0:
+        frequency[x[0][0]] = total/base
 
-    dramaList = nltk.FreqDist(wordsBuffer)
-    print dramaList.most_common(10)
-    '''
+    dramaList = sorted(frequency.items(), key = lambda x:x[1], reverse=True)
+    nominees[OFFICIAL_AWARDS[1]] = [x[0] for x in dramaList[:5]]
+    print 'drama', dramaList[:5]
+    # --------------------------------- end of drama movie ----------------------------------------
+
     
     # comedy or musical related movie
     '''
@@ -389,7 +399,6 @@ def tests(year):
     data = json.load(file_data)
 
   text = [[nltk.word_tokenize(w["text"].lower()),w["text"].lower()] for w in data]
-  
 
   # get one year movie list
   usefulMovies = []
@@ -403,6 +412,7 @@ def tests(year):
   worldMovies = getWorldMovies(year)
 
   
+  
 
   return
 
@@ -414,9 +424,9 @@ def main():
     run when grading. Do NOT change the name of this function or
     what it returns.'''
     # Your code here
-    #get_nominees(2013)
-    tests(2013)
-    #a = getAmericanMovies(2013)
+    get_nominees(2013)
+    # tests(2013)
+
     return
 
 if __name__ == '__main__':
