@@ -9,8 +9,8 @@ import requests
 
 
 stopwords = nltk.corpus.stopwords.words('english')
-commonUselessWords = ['award', 'http', 'rt', 'goldenglobes', 'goldenglobe', 'best', 'wins', 'win', 'of']
-uselessWords = [['demille', 'cecil', 'b'], ['drama', 'motion', 'picture', 'actress', 'actor']]
+commonUselessWords = ['award', 'http', 'rt', 'goldenglobes', 'goldenglobe', 'best', 'wins', 'win', 'of', 'lol']
+uselessWords = [['demille', 'cecil', 'b'], ['drama', 'motion', 'picture', 'actress', 'actor'], [], [], ['paul']]
 
 OFFICIAL_AWARDS = ['cecil b. demille award',         # this is a special case, deal with it later
                    'best motion picture - drama',
@@ -103,18 +103,19 @@ def get_nominees(year):
     americanMovies = getAmericanMovies(year) # only used in foreign film
 
     # ------------------------ this part is for getting world movies ------------------------------
-    worldMovies = getWorldMovies(year)
+    worldMovies = [getWorldMovies(year), getWorldMovies(year-1)]
     # get related movie list
     
     # ------------------------- foreign movie award -----------------------------------------------
-    for x in worldMovies:
-      foreign = 1
-      for y in americanMovies:
-        if x[0][0] in y[0]:
-          foreign = 0
-          break 
-      if foreign:
-        usefulMovies.append(x)
+    for i in range(2):
+      for x in worldMovies[i]:
+        foreign = 1
+        for y in americanMovies:
+          if x[0][0] in y[0]:
+            foreign = 0
+            break 
+        if foreign:
+          usefulMovies.append(x)
 
     foreignMovies = []
     for x in usefulMovies:
@@ -143,12 +144,13 @@ def get_nominees(year):
       if 'drama' in x[0] and 'television' not in x[1]:
         tweetsBuffer.append(x)
 
-    for x in worldMovies:
-      if 'drama' in x[1]:
-        for y in tweetsBuffer:
-          if x[0][0] in y[1]:
-            usefulMovies.append(x)
-            break
+    for i in range(2):
+      for x in worldMovies[i]:
+        if 'drama' in x[1]:
+          for y in tweetsBuffer:
+            if x[0][0] in y[1]:
+              usefulMovies.append(x)
+              break
     
     frequency = {}
     for x in usefulMovies:
@@ -169,25 +171,41 @@ def get_nominees(year):
     # --------------------------------- end of drama movie ----------------------------------------
 
     
-    # comedy or musical related movie
-    '''
+    # --------------------------  comedy or musical related movie ---------------------------------
     tweetsBuffer = []
-    nominees[OFFICIAL_AWARDS[1]] = []
-    for w in text:
-      if ('comedy' in w[0] or 'musical' in w[0]) and 'television' not in w[1]:
-        tweetsBuffer.append(w[1].lower())
+    usefulMovies = []
 
-    wordsBuffer = []
+    for x in text:
+      if 'musical' in x[0] or 'comedy' in x[0]:
+        if 'television' not in x[1]:
+          tweetsBuffer.append(x)
+
+    for i in range(2):
+      for x in worldMovies[i]:
+        if 'musical' in x[1] or 'comedy' in x[1]:
+          for y in tweetsBuffer:
+            if x[0][0] in y[1]:
+              usefulMovies.append(x)
+              break
+
+    frequency = {}
     for x in usefulMovies:
-      if 'comedy' not in x[1] and 'musical' not in x[1]:
-        continue
-      for y in tweetsBuffer:
-        if x[0][0] in y:
-          wordsBuffer.append(x[0][0])
+      base = 0
+      total = 0
+      for y in nltk.word_tokenize(x[0][0]):
+        if y not in stopwords and y.isalpha() and y not in commonUselessWords and y not in uselessWords[4]:
+          base+=1
+          for z in tweetsBuffer:
+            if y in z[0]:
+              total+=1
+      if base != 0:
+        frequency[x[0][0]] = total/base
+    
+    comedyList = sorted(frequency.items(), key=lambda x:x[1], reverse=True)
+    nominees[OFFICIAL_AWARDS[4]] = [x[0] for x in comedyList[:5]]
+    print 'comedy', comedyList[:5]
+    # -------------------------- end of comedy and musical movie -----------------------------------
 
-    comedyList = nltk.FreqDist(wordsBuffer)
-    print comedyList.most_common(10)
-    '''
     '''
     # animated movie
     tweetsBuffer = []
@@ -213,47 +231,6 @@ def get_nominees(year):
 
     cartoonList = sorted(frequency.items(), key = lambda x:x[1], reverse = True)
     print cartoonList[:10]
-    '''
-
-    '''
-    movies = tree.xpath('//div[@id="mw-content-text"]/table[4]/tr[2]/td[2]/i/a/text()')
-    #print len(tree.xpath('//div[@id="mw-content-text"]/table[4]'))
-    #print list(movies)
-    print movies
-    '''
-
-    '''
-    # get wiki page
-    wikiPage = requests.get("https://en.wikipedia.org/wiki/2013_in_film")
-    tree = html.fromstring(wikiPage.content)
-    
-    # get all the movie name 
-    movie1 = tree.xpath('//div[@id="mw-content-text"]/table[4]/tbody/tr[87]/td[2]/i/a/text()')
-    print movie1
-    '''
-
-
-    '''
-    tweetsBuffer = []
-    for w in text:
-      if 'drama' in w[0] and 'series' not in w[0] and 'tv' not in w[0] and 'actor' not in w[0] and 'actress' not in stopwords: 
-        tmp = [x for x in w if x != '#' and x != 'rt']
-        tweetsBuffer.append(w[1])
-
-    for w in tweetsBuffer[:10]:
-      sentences = nltk.sent_tokenize(w)
-      sentences = [nltk.word_tokenize(sent) for sent in sentences]
-      sentences = [nltk.pos_tag(sent) for sent in sentences]
-    '''
-    '''
-    wordsBuffer = []
-    for w in tweetsBuffer:
-      for x in w:
-        if x not in stopwords and x not in commonUselessWords and x not in uselessWords[1]:
-          wordsBuffer.append(x);
-
-    dramaList = nltk.FreqDist(wordsBuffer)
-    print dramaList.most_common(50)
     '''
     
     # try to get all nominees for drama movie
@@ -409,10 +386,8 @@ def tests(year):
   americanMovies = getAmericanMovies(year) # this list is only used to remove the unnecessary result for foreign movie
 
   # ------------------------ this part is for getting world movies ------------------------------
-  worldMovies = getWorldMovies(year)
+  worldMovies = [getWorldMovies(year), getWorldMovies(year-1)]
 
-  
-  
 
   return
 
