@@ -124,7 +124,7 @@ def score_structured(year, answers, info_type):
     # c_score is the completeness score
     spelling_score = 0
     c_score = 0
-    results = get_attr(gg_api, 'get_%s' % info_type)(year)
+    results = getattr(gg_api, 'get_%s' % info_type)(year)
 
     for a in answers['award_data']:
         temp_spelling, translation = calc_translation(results[a], answers['award_data'][a][info_type])
@@ -135,7 +135,7 @@ def score_structured(year, answers, info_type):
 
 
 def score_unstructured(year, answers, info_type):
-    results = get_attr(gg_api, 'get_%s' % info_type)(year)
+    results = getattr(gg_api, 'get_%s' % info_type)(year)
     spelling_score, translation = calc_translation(results, answers[info_type])
     c_score = calc_score([translation[res] if res in translation else res for res in results], answers[info_type])
 
@@ -162,7 +162,8 @@ def main(years, grading):
 
 if __name__ == '__main__':
     years = ['2013', '2015']
-    grading = ["hosts", "awards", "nominees", "presenters", "winners"]
+    #grading = ["hosts", "awards", "nominees", "presenters", "winners"]
+    grading = ["awards"]
 
     if len(sys.argv) > 1:
         if '2013' in sys.argv:
