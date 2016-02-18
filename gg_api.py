@@ -1,6 +1,41 @@
+# modified by john
+import json
+import re
+import pprint
+import nltk
+from lxml import html
+import requests
 
+stopwords = nltk.corpus.stopwords.words('english')
+commonUselessWords = ['award', 'http', 'rt', 'goldenglobes', 'goldenglobe', 'best', 'wins', 'win']
+uselessWords = [['demille', 'cecil', 'b'], ['drama', 'motion', 'picture', 'actress', 'actor']]
 
-OFFICIAL_AWARDS = ['cecil b. demille award', 'best motion picture - drama', 'best performance by an actress in a motion picture - drama', 'best performance by an actor in a motion picture - drama', 'best motion picture - comedy or musical', 'best performance by an actress in a motion picture - comedy or musical', 'best performance by an actor in a motion picture - comedy or musical', 'best animated feature film', 'best foreign language film', 'best performance by an actress in a supporting role in a motion picture', 'best performance by an actor in a supporting role in a motion picture', 'best director - motion picture', 'best screenplay - motion picture', 'best original score - motion picture', 'best original song - motion picture', 'best television series - drama', 'best performance by an actress in a television series - drama', 'best performance by an actor in a television series - drama', 'best television series - comedy or musical', 'best performance by an actress in a television series - comedy or musical', 'best performance by an actor in a television series - comedy or musical', 'best mini-series or motion picture made for television', 'best performance by an actress in a mini-series or motion picture made for television', 'best performance by an actor in a mini-series or motion picture made for television', 'best performance by an actress in a supporting role in a series, mini-series or motion picture made for television', 'best performance by an actor in a supporting role in a series, mini-series or motion picture made for television']
+OFFICIAL_AWARDS = ['cecil b. demille award',         # this is a special case, deal with it later
+                   'best motion picture - drama',
+                   'best performance by an actress in a motion picture - drama',
+                   'best performance by an actor in a motion picture - drama',
+                   'best motion picture - comedy or musical',
+                   'best performance by an actress in a motion picture - comedy or musical',
+                   'best performance by an actor in a motion picture - comedy or musical',
+                   'best animated feature film',
+                   'best foreign language film',
+                   'best performance by an actress in a supporting role in a motion picture',
+                   'best performance by an actor in a supporting role in a motion picture',
+                   'best director - motion picture', 
+                   'best screenplay - motion picture',
+                   'best original score - motion picture',
+                   'best original song - motion picture',
+                   'best television series - drama',
+                   'best performance by an actress in a television series - drama',
+                   'best performance by an actor in a television series - drama',
+                   'best television series - comedy or musical',
+                   'best performance by an actress in a television series - comedy or musical',
+                   'best performance by an actor in a television series - comedy or musical',
+                   'best mini-series or motion picture made for television',
+                   'best performance by an actress in a mini-series or motion picture made for television',
+                   'best performance by an actor in a mini-series or motion picture made for television',
+                   'best performance by an actress in a supporting role in a series, mini-series or motion picture made for television',
+                   'best performance by an actor in a supporting role in a series, mini-series or motion picture made for television']
 
 def get_hosts(year):
     '''Hosts is a list of one or more strings. Do NOT change the name
@@ -18,6 +53,209 @@ def get_nominees(year):
     '''Nominees is a list of dictionaries with the hard coded award
     names as keys, and each entry a list of strings. Do NOT change
     the name of this function or what it returns.'''
+
+    # set up the nominees, which turned out to be a dictionary
+    nominees = {}
+
+    # open all the tweets
+    
+    with open("../gg%d.json" % (year)) as file_data:
+      data = json.load(file_data)
+
+    text = [[nltk.word_tokenize(w["text"].lower()),w["text"].lower()] for w in data]
+    
+ 
+    # search for nominees
+    # first award ---------------------------------------------------------------------------------------
+    # first for the most special award - cecil b demille award, there is only one nominees for this award
+    tweetsBuffer = []
+    for w in text:
+      if "cecil" in w[0] and 'demille' in w[0]: 
+        tmp = [x for x in w[0] if  x.isalpha()]
+        tweetsBuffer.append(tmp)
+    # after get the tweets, get freqdist
+    # first we need to filter the stopwords
+    wordsBuffer = []
+    for w in tweetsBuffer:
+      for x in w:
+        if x not in stopwords and x not in uselessWords[0] and x not in commonUselessWords:
+          wordsBuffer.append(x);
+
+    # get the frequent list
+    cecilList = nltk.FreqDist(wordsBuffer)
+
+    # get the result
+    nominees[OFFICIAL_AWARDS[0]] = " ".join([cecilList.most_common(2)[1][0], cecilList.most_common(2)[0][0]]) 
+    print nominees[OFFICIAL_AWARDS[0]]
+    # end of first awards ----------------------------------------------------------------------------
+    
+    # second award -----------------------------------------------------------------------------------
+    # firstly get the drama related tweets
+    
+    # get one year movie list
+    usefulMovies = []
+    americanMovies = []
+    worldMovies = []
+
+    # ------------------------ this part is for getting american movies ---------------------------
+    americanMovies = getAmericanMovies(year)
+
+    # ------------------------ this part is for getting world movies ------------------------------
+    worldMovies = getWorldMovies(year)
+    # get related movie list
+    
+    for x in worldMovies:
+      if x[0][0] not in americanMovies[0][0][0]:          
+        for y in x[0]:
+          for z in text:
+            if y in z[1]:
+              usefulMovies.append(x);
+              break
+
+    # foreign movie related 
+    tweetsBuffer = []
+    for w in text:
+      if 'foreign' in w[0] and 'language' in w[0]:
+        tweetsBuffer.append(w[0])
+
+    frequency = {}
+    wordsBuffer = []
+    for x in usefulMovies:
+      base = 0
+      total = 0
+      for y in nltk.word_tokenize(x[0][0]):
+        if y not in stopwords and y.isalpha():
+          base+=1
+          for z in tweetsBuffer:
+            if y in z:
+              total+=1
+      if base == 0:
+        continue
+      frequency[x[0][0]]=total/base
+
+    foreignList = sorted(frequency.items(), key = lambda x:x[1], reverse = True)
+    print foreignList[:10]
+    '''
+    # drama related movie
+    tweetsBuffer = []
+    nominees[OFFICIAL_AWARDS[1]] = []
+    for w in text:
+      if 'drama' in w[0] and 'television' not in w[1]:
+        tweetsBuffer.append(w[1].lower())
+
+    wordsBuffer = []
+    frequency = {}
+    for x in usefulMovies:
+      if 'drama' not in x[1]:
+        continue
+      total = 0
+      base = 0
+      for y in nltk.word_tokenize(x[0][0]):
+        if y not in stopwords:
+          base+=1
+          for z in 
+          if x[0][0] in y:
+          wordsBuffer.append(x[0][0])
+
+    dramaList = nltk.FreqDist(wordsBuffer)
+    print dramaList.most_common(10)
+    '''
+    
+    # comedy or musical related movie
+    '''
+    tweetsBuffer = []
+    nominees[OFFICIAL_AWARDS[1]] = []
+    for w in text:
+      if ('comedy' in w[0] or 'musical' in w[0]) and 'television' not in w[1]:
+        tweetsBuffer.append(w[1].lower())
+
+    wordsBuffer = []
+    for x in usefulMovies:
+      if 'comedy' not in x[1] and 'musical' not in x[1]:
+        continue
+      for y in tweetsBuffer:
+        if x[0][0] in y:
+          wordsBuffer.append(x[0][0])
+
+    comedyList = nltk.FreqDist(wordsBuffer)
+    print comedyList.most_common(10)
+    '''
+    '''
+    # animated movie
+    tweetsBuffer = []
+    nominees[OFFICIAL_AWARDS[1]] = []
+    for w in text:
+      if 'animated' in w[0] or 'cartoon' in w[0] and 'television' not in w[1]:
+        tweetsBuffer.append(w[0])
+
+    wordsBuffer = []
+    frequency = {}
+    for x in usefulMovies:
+      if 'fantasy' not in x[1] and 'family' not in x[1] and 'adventure' not in x[1]:
+        continue
+      total = 0
+      base = 0
+      for z in nltk.word_tokenize(x[0][0]):
+        if z.isalpha() and z not in stopwords:
+          base += 1
+          for y in tweetsBuffer:
+            if z in y:
+              total += 1
+      frequency[x[0][0]]=total/base
+
+    cartoonList = sorted(frequency.items(), key = lambda x:x[1], reverse = True)
+    print cartoonList[:10]
+    '''
+
+    '''
+    movies = tree.xpath('//div[@id="mw-content-text"]/table[4]/tr[2]/td[2]/i/a/text()')
+    #print len(tree.xpath('//div[@id="mw-content-text"]/table[4]'))
+    #print list(movies)
+    print movies
+    '''
+
+    '''
+    # get wiki page
+    wikiPage = requests.get("https://en.wikipedia.org/wiki/2013_in_film")
+    tree = html.fromstring(wikiPage.content)
+    
+    # get all the movie name 
+    movie1 = tree.xpath('//div[@id="mw-content-text"]/table[4]/tbody/tr[87]/td[2]/i/a/text()')
+    print movie1
+    '''
+
+
+    '''
+    tweetsBuffer = []
+    for w in text:
+      if 'drama' in w[0] and 'series' not in w[0] and 'tv' not in w[0] and 'actor' not in w[0] and 'actress' not in stopwords: 
+        tmp = [x for x in w if x != '#' and x != 'rt']
+        tweetsBuffer.append(w[1])
+
+    for w in tweetsBuffer[:10]:
+      sentences = nltk.sent_tokenize(w)
+      sentences = [nltk.word_tokenize(sent) for sent in sentences]
+      sentences = [nltk.pos_tag(sent) for sent in sentences]
+    '''
+    '''
+    wordsBuffer = []
+    for w in tweetsBuffer:
+      for x in w:
+        if x not in stopwords and x not in commonUselessWords and x not in uselessWords[1]:
+          wordsBuffer.append(x);
+
+    dramaList = nltk.FreqDist(wordsBuffer)
+    print dramaList.most_common(50)
+    '''
+    
+    # try to get all nominees for drama movie
+    
+
+    # testing idea here
+    #for w in nominee_data:
+    #    if "boardwalk" in w[0]:
+    #        print w[1]
+
     # Your code here
     return nominees
 
@@ -26,6 +264,10 @@ def get_winners(year):
     names as keys, and each entry a list containing a single string.
     Do NOT change the name of this function or what it returns.'''
     # Your code here
+    winners = {}
+    nominees = get_nominees(year)
+    for x in OFFICIAL_AWARDS:
+      winners[x] = nominees[x][0]
     return winners
 
 def get_presenters(year):
@@ -41,8 +283,119 @@ def pre_ceremony():
     plain text file. It is the first thing the TA will run when grading.
     Do NOT change the name of this function or what it returns.'''
     # Your code here
+
+    '''
+    # firstly import the tweets and do the filtering
+    print "Filtering Related Tweets"
+    # Open and import the json tweets data
+    with open("../gg2013.json") as file_data:
+        data = json.load(file_data)
+
+    text = [[nltk.word_tokenize(w["text"].lower()),w["text"].lower()] for w in data]
+    
+    # start filtering
+    # nomiees related tweets
+    nominees_text = [w for w in text if "nominated" in w[0] or "nominee" in w[0] or "nominees" in w[0] or "endorse"]
+    with open("filteredTweets%d.json" % (2013), 'w') as file_data:
+        json.dump(nominees_text, file_data)
+
+    # winner related tweets -- work on it later
+
+    # television related tweets 
+    television_text = [w for w in text if "television" in w[0] or "series" in w[0]]
+    with open("televisionTweets%d.json" % (2013), 'w') as file_data:
+        json.dump(television_text, file_data)
+
+    # movie related 
+    movie_text = [w for w in text if "television" not in w[0]]
+    with open("movieTweets%d.json" % (2013), 'w') as file_data:
+        json.dump(movie_text, file_data)
+
+
+
+
+    # this part is for winner ----- keywords: best
+
+    print "Finished Filtering"
+    # --------------------------------- end of filtering ---------------------------------
+    '''
     print "Pre-ceremony processing complete."
     return
+
+# get american movie
+def getAmericanMovies(year):
+  page = requests.get('https://en.wikipedia.org/wiki/List_of_American_films_of_%d' % (year-1))
+  tree = html.fromstring(page.content)
+  americanMovies = []
+
+  for x in range(1, len(tree.xpath('//div[@id="mw-content-text"]/table[2]/tr'))):
+    tmp = tree.xpath('//div[@id="mw-content-text"]/table[2]/tr[%d]/td[1]/i/a/text()' % (x+1))
+    if not tmp:
+      tmp = tree.xpath('//div[@id="mw-content-text"]/table[2]/tr[%d]/td[1]/i/text()' % (x+1))
+    if not tmp:
+      tmp = tree.xpath('//div[@id="mw-content-text"]/table[2]/tr[%d]/td[1]/i/span[2]/span/a/text()' % (x+1))
+    if not tmp:
+      tmp = tree.xpath('//div[@id="mw-content-text"]/table[2]/tr[%d]/td[1]/i/a/text()' % (x+1))
+    if not tmp:
+      tmp = tree.xpath('//div[@id="mw-content-text"]/table[2]/tr[%d]/td[1]/i/span[2]/text()' % (x+1))
+    title = [w.lower() for w in tmp]
+    americanMovies.append(title)
+
+  return americanMovies
+
+# the return value is a 3d list
+def getWorldMovies(year):
+  worldMovies = []
+  page = requests.get('https://en.wikipedia.org/wiki/%d_in_film' % (year-1))
+  tree = html.fromstring(page.content)
+
+  for j in range(3, len(tree.xpath('//div[@id="mw-content-text"]/table'))-2):
+    for i in range(1,len(tree.xpath('//div[@id="mw-content-text"]/table[%d]/tr' % (j+1)))):
+      tmp = tree.xpath('//div[@id="mw-content-text"]/table[%d]/tr[%d]/td[2]/i/a/text()' % (j+1, i+1))
+      if not tmp:
+        tmp = tree.xpath('//div[@id="mw-content-text"]/table[%d]/tr[%d]/td[1]/i/a/text()' % (j+1, i+1))
+      title = [x.lower() for x in tmp]
+      if not title:
+        continue;
+
+      typeBuffer = []
+      existInfo = 0;
+      tmp1 = tree.xpath('//div[@id="mw-content-text"]/table[%d]/tr[%d]/td[5]/text()' % (j+1, i+1))
+      for x in tmp1:
+        if x[0] != '\n':
+          typeBuffer.append(x.lower())
+      tmp1 = tree.xpath('//div[@id="mw-content-text"]/table[%d]/tr[%d]/td[5]/a/text()' % (j+1, i+1))
+      for x in tmp1:
+        if x[0] != '\n':
+          typeBuffer.append(x.lower())
+
+      if not typeBuffer:
+        tmp1 = tree.xpath('//div[@id="mw-content-text"]/table[%d]/tr[%d]/td[4]/text()' % (j+1, i+1))
+        for x in tmp1:
+          if x[0] != '\n':
+            typeBuffer.append(x.lower())
+            tmp1 = tree.xpath('//div[@id="mw-content-text"]/table[%d]/tr[%d]/td[4]/a/text()' % (j+1, i+1))
+            for x in tmp1:
+              if x[0] != '\n':
+                typeBuffer.append(x.lower())
+
+      tmp1 = ' '.join(typeBuffer)
+      genre = re.findall(r"[\w']+", tmp1)
+      worldMovies.append([title, genre])
+
+  return worldMovies
+
+def tests(year):
+  
+  with open("../gg%d.json" % (year)) as file_data:
+    data = json.load(file_data)
+
+  text = [[nltk.word_tokenize(w["text"].lower()),w["text"].lower()] for w in data]
+
+
+
+  return
+
 
 def main():
     '''This function calls your program. Typing "python gg_api.py"
@@ -51,6 +404,8 @@ def main():
     run when grading. Do NOT change the name of this function or
     what it returns.'''
     # Your code here
+    get_nominees(2013)
+    #a = getAmericanMovies(2013)
     return
 
 if __name__ == '__main__':
