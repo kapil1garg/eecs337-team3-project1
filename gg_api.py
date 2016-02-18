@@ -98,43 +98,41 @@ def get_nominees(year):
     worldMovies = []
 
     # ------------------------ this part is for getting american movies ---------------------------
-    americanMovies = getAmericanMovies(year)
+    americanMovies = getAmericanMovies(year) # only used in foreign film
 
     # ------------------------ this part is for getting world movies ------------------------------
     worldMovies = getWorldMovies(year)
     # get related movie list
     
+    # ------------------------- foreign movie award -----------------------------------------------
     for x in worldMovies:
-      if x[0][0] not in americanMovies[0][0][0]:          
-        for y in x[0]:
-          for z in text:
-            if y in z[1]:
-              usefulMovies.append(x);
-              break
+      foreign = 1
+      for y in americanMovies:
+        if x[0][0] in y[0]:
+          foreign = 0
+          break 
+      if foreign:
+        usefulMovies.append(x)
 
-    # foreign movie related 
-    tweetsBuffer = []
-    for w in text:
-      if 'foreign' in w[0] and 'language' in w[0]:
-        tweetsBuffer.append(w[0])
+    foreignMovies = []
+    for x in usefulMovies:
+      for y in text:
+        if x[0][0] in y[1]:
+          foreignMovies.append(x)
+          break
 
     frequency = {}
-    wordsBuffer = []
-    for x in usefulMovies:
-      base = 0
-      total = 0
-      for y in nltk.word_tokenize(x[0][0]):
-        if y not in stopwords and y.isalpha():
-          base+=1
-          for z in tweetsBuffer:
-            if y in z:
-              total+=1
-      if base == 0:
-        continue
-      frequency[x[0][0]]=total/base
+    for x in foreignMovies:
+      count = 0
+      for y in text:
+        if x[0][0] in y[1] and 'foreign' in y[1]:
+          count+=1
+      frequency[x[0][0]] = count
 
     foreignList = sorted(frequency.items(), key = lambda x:x[1], reverse = True)
-    print foreignList[:10]
+    nominees[OFFICIAL_AWARDS[8]] = [ x[0] for x in foreignList[:5]]
+    # ----------------------------------- end of foreign movie --------------------------------------
+
     '''
     # drama related movie
     tweetsBuffer = []
@@ -386,13 +384,25 @@ def getWorldMovies(year):
   return worldMovies
 
 def tests(year):
-  
+
   with open("../gg%d.json" % (year)) as file_data:
     data = json.load(file_data)
 
   text = [[nltk.word_tokenize(w["text"].lower()),w["text"].lower()] for w in data]
+  
 
+  # get one year movie list
+  usefulMovies = []
+  americanMovies = []
+  worldMovies = []
 
+  # ------------------------ this part is for getting american movies ---------------------------
+  americanMovies = getAmericanMovies(year) # this list is only used to remove the unnecessary result for foreign movie
+
+  # ------------------------ this part is for getting world movies ------------------------------
+  worldMovies = getWorldMovies(year)
+
+  
 
   return
 
@@ -404,7 +414,8 @@ def main():
     run when grading. Do NOT change the name of this function or
     what it returns.'''
     # Your code here
-    get_nominees(2013)
+    #get_nominees(2013)
+    tests(2013)
     #a = getAmericanMovies(2013)
     return
 
