@@ -95,25 +95,45 @@ stop_words = ['.', ',', '!', '?', '(', '-', ' on ', ' the ', ' male ', ' female 
 
 class Award(object):
 
-    def __init__(self, a_name, a_nominees=[], a_winner=[], a_presenters=[], a_sentiments=[]):
+    def __init__(self, a_name, a_nominees=[], a_winners=[], a_presenters=[], a_sentiments=[]):
 
         self.name = a_name
         self.nominees = a_nominees
-        self.winners = a_winner
+        self.winners = a_winners
         self.presenters = a_presenters
 
     def get_nominees(self, year):
 
-        if self.nominees:
-
-            return self.nominees
-
-        else:
+        if not self.nominees:
 
             self.nominees = NOMINEES_2013[self.name]
 
-            return self.nominees
-       
+
+        return self.nominees
+
+    def get_winners(self, year):
+
+        if not self.winners:
+
+            self.winners = []
+
+        return self.winners
+
+    def get_presenters(self, year):
+
+        if not self.presenters:
+
+            self.presenters = []
+
+        return self.presenters
+
+    def get_sentiments(year):
+
+        if not self.sentiments:
+
+            self.sentiments = []
+
+        return sentiments
         
 def get_hosts(year):
     '''Hosts is a list of one or more strings. Do NOT change the name
@@ -343,21 +363,20 @@ def get_presenters(year):
     name of this function or what it returns.'''
     # Your code here
 
-    if not (os.path.isfile("./clean_tweets%s.json" % year)):
-        raise Exception('Tweets for %s have not been preprocessed')
+    path = './awards_%s_pickle.txt' % year
+    presenters = {}
+    try:
+        with open(path) as awards_file:
 
-    with open("./clean_tweets%s.json" % year) as clean_file:
-        tweets = json.load(clean_file)
+            awards = pickle.load(awards_file)
 
-    re.findall("([A-Z][-'a-zA-Z]+\s[A-Z][-'a-zA-Z]+)", tweet)
+    except NameError:
 
-    for tweetIndex in range(20):
+        print 'Cannot get presenters. Preprocessing is not complete. "%s" is not a file' % path
 
-        clean_tweet = clean(tweets[tweetIndex])
+    for award in awards:
 
-        print clean_tweet
-        
-    presenters = []
+        presenters[award.name] = award.presenters
 
     
     return presenters
@@ -430,35 +449,14 @@ def pre_ceremony():
             for award_name in OFFICIAL_AWARDS:
 
                 award = Award(award_name)
+                nominees = award.get_nominees(year)
+                winners = award.get_winners(year)
+                presenters = awards.get_presenters(year)
+                sentiments = awards.get_sentiments(year)
+                award = Award(award_name, nominees, winners, presenters, sentiments)
                 awards_2013.append(award)
 
             pickle.dump(awards_2013, awards_file)
-
-    try:
-
-        with open(awards_path_2013, 'rb') as awards_file:
-
-            awards_2013 = pickle.load(awards_file)
-            nominees = []
-            winners = []
-            presenters = []
-            sentiments = []
-            for n,award in enumerate(awards_2013):
-
-                nominees = award.get_nominees(year)
-                #winners = award.get_winners(year)
-                #presenters = award.get_presenters(year)
-                #sentiments = award.get_sentiments(year)
-
-                awards_2013[n] = Award(award.name, nominees, winners, presenters, sentiments)
-
-        with open(awards_path_2013, 'wb') as awards_file:
-            
-            pickle.dump(awards_2013, awards_file)
-            
-    except NameError:
-
-        print '%s is not a file. Could not complete preprocessing' % awards_path_2013
     
     print "Pre-ceremony processing complete."
     return
