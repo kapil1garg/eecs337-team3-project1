@@ -5,10 +5,116 @@ import sys
 import nltk
 import os.path
 import collections
+import pickle
 
 
-OFFICIAL_AWARDS = ['cecil b. demille award', 'best motion picture - drama', 'best performance by an actress in a motion picture - drama', 'best performance by an actor in a motion picture - drama', 'best motion picture - comedy or musical', 'best performance by an actress in a motion picture - comedy or musical', 'best performance by an actor in a motion picture - comedy or musical', 'best animated feature film', 'best foreign language film', 'best performance by an actress in a supporting role in a motion picture', 'best performance by an actor in a supporting role in a motion picture', 'best director - motion picture', 'best screenplay - motion picture', 'best original score - motion picture', 'best original song - motion picture', 'best television series - drama', 'best performance by an actress in a television series - drama', 'best performance by an actor in a television series - drama', 'best television series - comedy or musical', 'best performance by an actress in a television series - comedy or musical', 'best performance by an actor in a television series - comedy or musical', 'best mini-series or motion picture made for television', 'best performance by an actress in a mini-series or motion picture made for television', 'best performance by an actor in a mini-series or motion picture made for television', 'best performance by an actress in a supporting role in a series, mini-series or motion picture made for television', 'best performance by an actor in a supporting role in a series, mini-series or motion picture made for television']
+OFFICIAL_AWARDS = ['cecil b. demille award',
+                   'best motion picture - drama',
+                   'best performance by an actress in a motion picture - drama',
+                   'best performance by an actor in a motion picture - drama',
+                   'best motion picture - comedy or musical',
+                   'best performance by an actress in a motion picture - comedy or musical',
+                   'best performance by an actor in a motion picture - comedy or musical',
+                   'best animated feature film',
+                   'best foreign language film',
+                   'best performance by an actress in a supporting role in a motion picture',
+                   'best performance by an actor in a supporting role in a motion picture',
+                   'best director - motion picture',
+                   'best screenplay - motion picture',
+                   'best original score - motion picture',
+                   'best original song - motion picture',
+                   'best television series - drama',
+                   'best performance by an actress in a television series - drama',
+                   'best performance by an actor in a television series - drama',
+                   'best television series - comedy or musical',
+                   'best performance by an actress in a television series - comedy or musical',
+                   'best performance by an actor in a television series - comedy or musical',
+                   'best mini-series or motion picture made for television',
+                   'best performance by an actress in a mini-series or motion picture made for television',
+                   'best performance by an actor in a mini-series or motion picture made for television',
+                   'best performance by an actress in a supporting role in a series, mini-series or motion picture made for television',
+                   'best performance by an actor in a supporting role in a series, mini-series or motion picture made for television']
 
+# NOAH using this to test out my get presenters function. Assuming we can get all of the correct nominees
+NOMINEES_2013 = {'cecil b. demille award': [],
+                   'best motion picture - drama': ['Argo', 'Django Unchained', 'Life of Pi', 'Lincoln', 'Zero Dark Thirty'] ,
+                   'best performance by an actress in a motion picture - drama' : ['Jessica Chastain', 'Marion Cotillard', 'Helen Mirren', 'Naomi Watts', 'Rachel Weisz'],
+                   'best performance by an actor in a motion picture - drama' : ['Daniel Day-Lewis', 'Richard Gere', 'John Hawkes', 'Joaquin Phoenix', 'Denzel Washington'],
+                   'best motion picture - comedy or musical' : ['Les Miserables', 'The Best Exotic Marigold Hotel', 'Moonrise Kingdom', 'Salmon Fishing in the Yemen', 'Silver Linings Playbook'],
+                   'best performance by an actress in a motion picture - comedy or musical' : ['Jennifer Lawrence', 'Emily Blunt', 'Judi Dench', 'Maggie Smith', 'Meryl Streep'],
+                   'best performance by an actor in a motion picture - comedy or musical' : ['Hugh Jackman', 'Jack Black', 'Bradley Cooper', 'Ewan McGregor', 'Bill Murray'],
+                   'best animated feature film' : ['Brave', 'Frankenweenie', 'Hotel Transylvania', 'Rise of the Guardians', 'Wreck-It Ralph'],
+                   'best foreign language film' : ['Amour', 'A Royal Affair', 'The Intouchables', 'Kon-Tiki', 'Rust and Bone'],
+                   'best performance by an actress in a supporting role in a motion picture' : ['Anne Hathaway', 'Amy Adams', 'Sally Field', 'Helen Hunt', 'Nicole Kidman'],
+                   'best performance by an actor in a supporting role in a motion picture' : ['Christopher Waltz', 'Alan Arkin', 'Leonardo DiCaprio', 'Phillip Seymour Hoffman', 'Tommy Lee Jones'],
+                   'best director - motion picture' : ['Ben Affleck', 'Kathryn Bigelow', 'Ang Lee', 'Steven Spielberg', 'Quentin Tarantino'],
+                   'best screenplay - motion picture' : ['Quentin Tarantino', 'Tony Kushner', 'David O Russel', 'Mark Boal'],
+                   'best original score - motion picture' : ['Mychael Danna', 'Dario Marianelli', 'Alexandre Desplat', 'John Williams', 'Tom Tykwer', 'Johnny Klimek', 'Reinhold Heil'],
+                   'best original song - motion picture' : ['Skyfall', 'For You', 'Not Running Anymore', 'Safe & Sound', 'Suddenly'],
+                   'best television series - drama' : ['Homeland', 'Breaking Bad', 'Boardwalk Empire', 'Downton Abbey', 'The Newsroom'],
+                   'best performance by an actress in a television series - drama' : ['Claire Danes', 'Connie Britton', 'Glenn Close', 'Michelle Dockery', 'Julianna Margulies'],
+                   'best performance by an actor in a television series - drama' : ['Damian Lewis', 'Steve Buscemi', 'Bryan Cranston', 'Jeff Daniels', 'Jon Hamm'],
+                   'best television series - comedy or musical' : ['Girls', 'The Big Bang Theory', 'Episodes', 'Modern Family', 'Smash'],
+                   'best performance by an actress in a television series - comedy or musical' : ['Lena Dunham', 'Zooey Deschanel', 'Tina Fey', 'Julia Lois Dreyfus', 'Amy Poehler'],
+                   'best performance by an actor in a television series - comedy or musical' : ['Don Cheadle', 'Alec Baldwin', 'Lois C.K.', 'Matt LeBlanc', 'Jim Parsons'],
+                   'best mini-series or motion picture made for television' : ['Game Change', 'The Girl', 'The Hour', 'Hatfields & McCoys', 'Political Animals'],
+                   'best performance by an actress in a mini-series or motion picture made for television' : ['Julianne Moore', 'Nicole Kidman', 'Jessica Lange', 'Sienna Miller', 'Sigourney Weaver'],
+                   'best performance by an actor in a mini-series or motion picture made for television' : ['Kevin Costner', 'Benedict Cumberbatch', 'Woody Harrelson', 'Toby Jones', 'Clive Owen'],
+                   'best performance by an actress in a supporting role in a series, mini-series or motion picture made for television' : ['Maggie Smith', 'Hayden Panettiere', 'Archie Panjabi', 'Sarah Paulson', 'Sofia Vergara'],
+                   'best performance by an actor in a supporting role in a series, mini-series or motion picture made for television' : ['Ed Harris', 'Max Greenfield', 'Danny Houston', 'Mandy Patinkin', 'Eric Stonestreet']}
+
+AWARDS_LISTS = [['cecil', 'demille', 'award'],
+                ['best', 'motion picture', 'drama'], # no actor or actress
+                ['best', 'actress', 'drama'],
+                ['best', 'actor', 'drama'],
+                ['best', 'motion picture', 'comedy', 'musical'], # no actor or actress
+                ['best', 'actress', 'comedy', 'musical'],
+                ['best', 'actor', 'comedy', 'musical'],
+                ['best', 'animated'],
+                ['best', 'foreign'],
+                ['best', 'actress', 'supporting'],
+                ['best', 'actor', 'supporting'],
+                ['best', 'director'],
+                ['best', 'screenplay'],
+                ['best', 'score'],
+                ['best', 'song'],
+                ['best', 'television', 'drama'], # no actor or actress
+                ['best', 'actress', 'television', 'drama'],
+                ['best', 'actor', 'television', 'drama'],
+                ['best', 'television', 'comedy', 'musical'], # no actor or actress
+                ['best', 'actress', 'television', 'comedy', 'musical'],
+                ['best', 'actor', 'television', 'comedy', 'musical'],
+                ['best', 'mini series', 'motion picture', 'television'], # mini series OR motion picture
+                ['best', 'actress', 'mini series', 'motion picture', 'television'], # mini series OR motion picture
+                ['best', 'actor', 'mini series', 'motion picture', 'television'],
+                ['best', 'actress', 'supporting', 'series', 'mini series', 'motion picture', 'television'], # series OR mini series OR motion picture
+                ['best', 'actor', 'supporting', 'series', 'mini series', 'motion picture', 'television']] # series OR mini series OR motion picture
+
+stop_words = ['.', ',', '!', '?', '(', '-', ' on ', ' the ', ' male ', ' female ', ' in ', ' a ', ' is ', ' for ', ' at ', ' golden ', ' globes ', ' by ', ' an ', ' category ', ' and ', ' show ']
+                
+
+class Award(object):
+
+    def __init__(self, a_name, a_nominees=[], a_winner=[], a_presenters=[], a_sentiments=[]):
+
+        self.name = a_name
+        self.nominees = a_nominees
+        self.winners = a_winner
+        self.presenters = a_presenters
+
+    def get_nominees(self, year):
+
+        if self.nominees:
+
+            return self.nominees
+
+        else:
+
+            self.nominees = NOMINEES_2013[self.name]
+
+            return self.nominees
+       
+        
 def get_hosts(year):
     '''Hosts is a list of one or more strings. Do NOT change the name
     of this function or what it returns.'''
@@ -27,15 +133,6 @@ def get_awards(year):
     re_Best_MotionPicture = re.compile('(best\s[a-zA-Z\s\(-]*?motion picture)', re.IGNORECASE)
     re_Best_Television = re.compile('(best\s[a-zA-Z\s\(-]*?television)', re.IGNORECASE)
     re_Best_Film = re.compile('(best\s[a-zA-Z\s\(-]*?film)', re.IGNORECASE)
-
-    # No need for break words because our regexs will not capture these
-    #break_words = [' http', ' #', '.', ',', '!', '?','\\', ':', ';', '"', "'"]
-
-    # stop words to be removed from all tweets
-    stop_words = ['.', ',', '!', '(', '-', ' on ', ' the ', ' male ', ' female ', ' in ', ' a ', ' is ', ' for ', ' at ', ' golden ', ' globes ', ' by ', ' an ', ' category ', ' and ', ' show ']
-
-    
-
     
 
     if not (os.path.isfile("./clean_tweets%s.json" % year)):
@@ -49,8 +146,6 @@ def get_awards(year):
     # tv -> television
     # television -> television series (not for things that end with television)
     
-
-#    awards = {}
     awards = []
     awards_2 = []
     awards_final = []
@@ -154,9 +249,6 @@ def get_awards(year):
 
                         awards_2.append(l_filmMatch)
                 
-
- #   remWords = ['(', 'in a', ' in ']
- #   awards_final = []
     for award in awards:
 
         award_final = award
@@ -214,15 +306,28 @@ def get_awards(year):
        
     return [award_fd for award_fd in awards_fd.most_common(30)]
 
-def clean_awards(awards):
-    '''Takes an unfiltered dictionary of awards that we grabbed from the tweets.
-    Returns a dictionary with cleaned awards list'''
-
 def get_nominees(year):
     '''Nominees is a list of dictionaries with the hard coded award
     names as keys, and each entry a list of strings. Do NOT change
     the name of this function or what it returns.'''
     # Your code here
+
+    path = './awards_%s_pickle.txt' % year
+    nominees = {}
+    try:
+        with open(path) as awards_file:
+
+            awards = pickle.load(awards_file)
+
+    except NameError:
+
+        print 'Cannot get nominees. Preprocessing is not complete. "%s" is not a file' % path
+
+    for award in awards:
+
+        nominees[award.name] = award.nominees
+
+            
     return nominees
 
 def get_winners(year):
@@ -237,7 +342,67 @@ def get_presenters(year):
     names as keys, and each entry a list of strings. Do NOT change the
     name of this function or what it returns.'''
     # Your code here
+
+    if not (os.path.isfile("./clean_tweets%s.json" % year)):
+        raise Exception('Tweets for %s have not been preprocessed')
+
+    with open("./clean_tweets%s.json" % year) as clean_file:
+        tweets = json.load(clean_file)
+
+    re.findall("([A-Z][-'a-zA-Z]+\s[A-Z][-'a-zA-Z]+)", tweet)
+
+    for tweetIndex in range(20):
+
+        clean_tweet = clean(tweets[tweetIndex])
+
+        print clean_tweet
+        
+    presenters = []
+
+    
     return presenters
+
+def clean(tweet, change_film=True):
+
+    clean_tweet = tweet
+
+    if 'movie' in clean_tweet:
+
+        'motion picture'.join([a for a in clean_tweet.split('movie')])
+
+    if change_film and 'film' in clean_tweet:
+
+        'motion picture'.join([a for a in clean_tweet.split('film')])
+
+    if 'picture' in clean_tweet and 'motion' not in clean_tweet:
+
+        'motion picture'.join([a for a in clean_tweet.split('picture')])
+
+    if ' tv ' in clean_tweet:
+
+        ' television '.join([a.strip() for a in clean_tweet.split(' tv ')])
+
+    if 'comedy' in clean_tweet and 'musical' not in clean_tweet:
+
+        'comedy or musical'.join([a for a in clean_tweet.split('comedy')])
+
+    elif 'musical' in clean_tweet and 'comedy' not in clean_tweet:
+
+        'comedy or musical'.join([a for a in clean_tweet.split('musical')])
+
+    elif 'musical or comedy' in clean_tweet:
+
+        'comedy or musical'.join([a for a in clean_tweet.split('musical or comedy')])
+
+    for stop_word in stop_words:
+
+        if stop_word in clean_tweet:
+
+            clean_tweet = ' '.join([a.strip() for a in clean_tweet.split(stop_word)])
+
+    return clean_tweet
+
+        
 
 def pre_ceremony():
     '''This function loads/fetches/processes any data your program
@@ -245,13 +410,55 @@ def pre_ceremony():
     plain text file. It is the first thing the TA will run when grading.
     Do NOT change the name of this function or what it returns.'''
     # Your code here
+
+    # Clean the tweets of the given file path
+    #file_path = './gg2013.json'
     
-    file_path = './gg2013.json'
+    #tweets = get_tweets(file_path)
+    #my_clean_tweets = clean_tweets(tweets)
+
+    # NOAH Need to write the clean tweets into a file here so that every other function can access them
     
-    tweets = get_tweets(file_path)
-    my_clean_tweets = clean_tweets(tweets)
-    
-    #print len(my_clean_tweets)
+    # Initialize all of the Awards objects using the OFFICIAL_AWARDS list
+    awards_path_2013 = './awards_2013_pickle.txt'
+    year = 2013
+    if not (os.path.isfile(awards_path_2013)):
+
+        with open(awards_path_2013, 'wb') as awards_file:
+            
+            awards_2013 = []
+            for award_name in OFFICIAL_AWARDS:
+
+                award = Award(award_name)
+                awards_2013.append(award)
+
+            pickle.dump(awards_2013, awards_file)
+
+    try:
+
+        with open(awards_path_2013, 'rb') as awards_file:
+
+            awards_2013 = pickle.load(awards_file)
+            nominees = []
+            winners = []
+            presenters = []
+            sentiments = []
+            for n,award in enumerate(awards_2013):
+
+                nominees = award.get_nominees(year)
+                #winners = award.get_winners(year)
+                #presenters = award.get_presenters(year)
+                #sentiments = award.get_sentiments(year)
+
+                awards_2013[n] = Award(award.name, nominees, winners, presenters, sentiments)
+
+        with open(awards_path_2013, 'wb') as awards_file:
+            
+            pickle.dump(awards_2013, awards_file)
+            
+    except NameError:
+
+        print '%s is not a file. Could not complete preprocessing' % awards_path_2013
     
     print "Pre-ceremony processing complete."
     return
@@ -263,13 +470,13 @@ def main():
     run when grading. Do NOT change the name of this function or
     what it returns.'''
     # Your code here
+
+    # PRE_CEREMONY MUST BE RUN BEFORE ALL OTHER API FUNCTIONS
+    pre_ceremony()
+
+    nominees = get_nominees(2013)
+    print nominees
     
-    #pre_ceremony()
-
-    award_tweets = get_awards(2013)
-
-    print "len(award_tweets): %s" % len(award_tweets)
-    print award_tweets
     return
 
 def get_tweets(path):
