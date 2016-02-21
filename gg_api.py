@@ -76,7 +76,7 @@ def get_hosts(year):
             cleaned_current_words = [w for w in current_word_list if w not in stop_words]
             bigrams.extend(nltk.bigrams(cleaned_current_words))
     bigram_freq = nltk.FreqDist(bigrams)
-    top_50_bigrams = bigram_freq.most_common(50)
+    top_50_bigrams = bigram_freq.most_common(2)
 
     # determine if two hosts (ratio between top two bigrams >= threshold) and return appropriately
     threshold = 0.7
