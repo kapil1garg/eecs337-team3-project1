@@ -51,7 +51,39 @@ OFFICIAL_AWARDS = ['cecil b. demille award', 'best motion picture - drama', 'bes
 def get_hosts(year):
     '''Hosts is a list of one or more strings. Do NOT change the name
     of this function or what it returns.'''
-    # Your code here
+    hosts = []
+
+    # get tweets
+    raw_tweets = load_data(year)
+    n_tweets = len(raw_tweets)
+    tweet_iterator = xrange(n_tweets)
+
+    # create stop word list
+    stop_words = nltk.corpus.stopwords.words('english')
+    stop_words.extend(['http', 'golden', 'globe', 'globes', 'goldenglobe', 'goldenglobes'])
+    stop_words = set(stop_words)
+
+    # Isolate tweets with "host" or "hosts" in tweet then preprocess (see below)
+    # Preprocessing: make text lowercase, remove retweets, and remove stopwords
+    # After preprocessing, generate bigrams and create frequency distribution
+    bigrams = []
+    for i in tweet_iterator:
+        current_word_list = re.findall(r"['a-zA-Z]+\b", raw_tweets[i]['text'].lower())
+        if 'rt' not in current_word_list and ('host' in current_word_list or 'hosts' in current_word_list):
+            cleaned_current_words = [w for w in current_word_list if w not in stop_words]
+            bigrams.extend(nltk.bigrams(cleaned_current_words))
+    bigram_freq = nltk.FreqDist(bigrams)
+    top_50_bigrams = bigram_freq.most_common(50)
+
+    # determine if two hosts (ratio between top two bigrams >= threshold)
+    threshold = 0.7
+    ratio = top_50_bigrams[1][1] / (1.0 + top_50_bigrams[0][1])
+    if ratio >= threshold:
+        host_1 = top_50_bigrams[0][0][0] + ' ' + top_50_bigrams[0][0][1]
+        host_2 = top_50_bigrams[1][0][0] + ' ' + top_50_bigrams[1][0][1]
+        hosts = [host_1, host_2]
+    else:
+        hosts = [top_50_bigrams[0][0][0] + ' ' + top_50_bigrams[0][0][1]]
     return hosts
 
 def get_awards(year):
@@ -96,6 +128,10 @@ def main():
     and then run gg_api.main(). This is the second thing the TA will
     run when grading. Do NOT change the name of this function or
     what it returns.'''
+
+    # get hosts
+    print get_hosts(2013)
+    print get_hosts(2015)
 
 if __name__ == '__main__':
     mp.freeze_support()
