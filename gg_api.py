@@ -76,7 +76,7 @@ def get_hosts(year):
     bigram_freq = nltk.FreqDist(bigrams)
     top_50_bigrams = bigram_freq.most_common(50)
 
-    # determine if two hosts (ratio between top two bigrams >= threshold)
+    # determine if two hosts (ratio between top two bigrams >= threshold) and return appropriately
     threshold = 0.7
     ratio = top_50_bigrams[1][1] / (1.0 + top_50_bigrams[0][1])
     if ratio >= threshold:
