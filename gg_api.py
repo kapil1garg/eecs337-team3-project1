@@ -96,24 +96,6 @@ def main():
     and then run gg_api.main(). This is the second thing the TA will
     run when grading. Do NOT change the name of this function or
     what it returns.'''
-    # Your code here
-    tweets = load_data(2013)
-    print 'Testing serial code'
-    start_time = time.time()
-    print tweets[2]
-    print lower_case_all(tweets)[2]
-    print remove_stop_words_all(tweets)[2]
-    end_time = time.time()
-    print 'Execution time for serial was ' + str(end_time - start_time) + '\n'
-
-    # print 'Testing parallel code'
-    # start_time = time.time()
-    # print tweets[2]
-    # print lower_case_mp(tweets)[2]
-    # print remove_stop_words_mp(tweets)[2]
-    # end_time = time.time()
-    # print 'Execution time for parallel was ' + str(end_time - start_time) + '\n'
-    # return
 
 if __name__ == '__main__':
     mp.freeze_support()
