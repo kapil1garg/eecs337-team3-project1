@@ -9,8 +9,9 @@ import requests
 
 
 stopwords = nltk.corpus.stopwords.words('english')
-commonUselessWords = ['award', 'http', 'rt', 'goldenglobes', 'goldenglobe', 'best', 'wins', 'win', 'of', 'lol']
-uselessWords = [['demille', 'cecil', 'b'], ['drama', 'motion', 'picture', 'actress', 'actor'], [], [], ['paul']]
+commonUselessWords = ['girl', 'girls' ,'award', 'http', 'rt', 'goldenglobes', 'goldenglobe', 'golden', 'best', 'wins', 'win', 'of', 'lol']
+uselessWords = [['demille', 'cecil', 'b'], ['drama', 'motion', 'picture', 'actress', 'actor'], [], [], ['paul'], [], [], []]
+actressUselessWords = ['actor', 'actress', 'drama', 'comedy', 'motion', 'picture', 'movies', 'series', 'tv', 'television', 'supporting', 'see']
 
 OFFICIAL_AWARDS = ['cecil b. demille award',         # this is a special case, deal with it later
                    'best motion picture - drama',
@@ -61,7 +62,7 @@ def get_nominees(year):
 
     # open all the tweets
     
-    with open("../gg%d.json" % (year)) as file_data:
+    with open("gg%d.json" % (year)) as file_data:
       data = json.load(file_data)
 
     text = [[nltk.word_tokenize(w["text"].lower()),w["text"].lower()] for w in data]
@@ -86,8 +87,22 @@ def get_nominees(year):
     # get the frequent list
     cecilList = nltk.FreqDist(wordsBuffer)
 
-    # get the result
-    nominees[OFFICIAL_AWARDS[0]] = " ".join([cecilList.most_common(2)[1][0], cecilList.most_common(2)[0][0]]) 
+    # make a test on which words on the front
+    name1 = cecilList.most_common(2)[1][0]
+    name2 = cecilList.most_common(2)[0][0]
+    count = [0,0]
+
+    for x in text:
+      if ' '.join((name1, name2)) in x[1]:
+        count[0]+=1
+      if ' '.join((name2, name1)) in x[1]:
+        count[1]+=1
+
+    if count[0]>count[1]:
+      nominees[OFFICIAL_AWARDS[0]]=' '.join((name1, name2))
+    else:
+      nominees[OFFICIAL_AWARDS[0]]=' '.join((name2, name1))
+
     print nominees[OFFICIAL_AWARDS[0]]
     # end of first awards ----------------------------------------------------------------------------
     
@@ -172,17 +187,22 @@ def get_nominees(year):
 
     
     # --------------------------  comedy or musical related movie ---------------------------------
+    
+    # -------------------------- end of comedy and musical movie -----------------------------------
+
+
+    # -------------------------- next is for animated feature movie --------------------------------
     tweetsBuffer = []
     usefulMovies = []
 
     for x in text:
-      if 'musical' in x[0] or 'comedy' in x[0]:
+      if 'feature' in x[1] or 'cartoon' in x[0] or 'kid' in x[1]:
         if 'television' not in x[1]:
           tweetsBuffer.append(x)
 
     for i in range(2):
       for x in worldMovies[i]:
-        if 'musical' in x[1] or 'comedy' in x[1]:
+        if 'fantasy' in x[1] or 'family' in x[1] or 'adventure' in x[1]:
           for y in tweetsBuffer:
             if x[0][0] in y[1]:
               usefulMovies.append(x)
@@ -193,7 +213,7 @@ def get_nominees(year):
       base = 0
       total = 0
       for y in nltk.word_tokenize(x[0][0]):
-        if y not in stopwords and y.isalpha() and y not in commonUselessWords and y not in uselessWords[4]:
+        if y not in stopwords and y.isalpha() and y not in commonUselessWords and y not in uselessWords[7]:
           base+=1
           for z in tweetsBuffer:
             if y in z[0]:
@@ -201,37 +221,30 @@ def get_nominees(year):
       if base != 0:
         frequency[x[0][0]] = total/base
     
-    comedyList = sorted(frequency.items(), key=lambda x:x[1], reverse=True)
-    nominees[OFFICIAL_AWARDS[4]] = [x[0] for x in comedyList[:5]]
-    print 'comedy', comedyList[:5]
-    # -------------------------- end of comedy and musical movie -----------------------------------
+    cartoonList = sorted(frequency.items(), key=lambda x:x[1], reverse=True)
+    nominees[OFFICIAL_AWARDS[7]] = [x[0] for x in cartoonList[:5]]
+    print 'cartoon', cartoonList[:5]
+    # -------------------------- finish all the movie here ------------------------------------------
 
-    '''
-    # animated movie
-    tweetsBuffer = []
-    nominees[OFFICIAL_AWARDS[1]] = []
-    for w in text:
-      if 'animated' in w[0] or 'cartoon' in w[0] and 'television' not in w[1]:
-        tweetsBuffer.append(w[0])
+    # -------------------------- movie for best original song ---------------------------------------
 
-    wordsBuffer = []
-    frequency = {}
-    for x in usefulMovies:
-      if 'fantasy' not in x[1] and 'family' not in x[1] and 'adventure' not in x[1]:
-        continue
-      total = 0
-      base = 0
-      for z in nltk.word_tokenize(x[0][0]):
-        if z.isalpha() and z not in stopwords:
-          base += 1
-          for y in tweetsBuffer:
-            if z in y:
-              total += 1
-      frequency[x[0][0]]=total/base
 
-    cartoonList = sorted(frequency.items(), key = lambda x:x[1], reverse = True)
-    print cartoonList[:10]
-    '''
+
+
+
+
+    # ---------------------------------- end of best original song ----------------------------------
+
+
+    # start to focus on human name for motion picture
+    #dramaActorList = getHumanList('drama', 'actor', worldMovies, text)
+    #dramaActressList = getHumanList('drama', 'actress', worldMovies, text)
+
+
+
+
+
+
     
     # try to get all nominees for drama movie
     
@@ -307,6 +320,54 @@ def pre_ceremony():
     print "Pre-ceremony processing complete."
     return
 
+# get nominees movie list
+def getMovieNominees(text, keywords, worldMovies, typeIndex):
+  tweetsBuffer = []
+  usefulMovies = []
+
+  for x in text:
+    for keyword in keywords:
+      if keyword in x[0]:
+        if 'television' not in x[1]:
+          tweetsBuffer.append(x)
+          break
+
+  for i in range(2):
+    for x in worldMovies[i]:
+      print x;
+      for keyword in keywords:
+        if keyword in x[1]:
+          for y in tweetsBuffer:
+            if x[0][0] in y[1]:
+              usefulMovies.append(x)
+            break
+          break
+
+  frequency = {}
+  for x in usefulMovies:
+    base = 0
+    total = 0
+    for y in nltk.word_tokenize(x[0][0]):
+      if y not in stopwords and y.isalpha() and y not in commonUselessWords and y not in uselessWords[typeIndex]:
+        base+=1
+        for z in tweetsBuffer:
+          if y in z[0]:
+            total+=1
+    if base != 0:
+      frequency[x[0][0]] = total/base
+  
+  finalMovieList = sorted(frequency.items(), key=lambda x:x[1], reverse=True)
+  print keywords, finalMovieList[:5]
+  return [x[0] for x in finalMovieList[:5]]
+
+
+
+
+
+  return
+
+
+
 # get american movie
 def getAmericanMovies(year):
   page = requests.get('https://en.wikipedia.org/wiki/List_of_American_films_of_%d' % (year-1))
@@ -370,9 +431,27 @@ def getWorldMovies(year):
 
   return worldMovies
 
+def getNameDictionary(gender):
+
+  nameList = []
+
+  page = requests.get('http://names.mongabay.com/%s_names_alpha.htm' % gender)
+  tree = html.fromstring(page.content)
+
+  namelen = len(tree.xpath('//table[@id="myTable"]/tr'))
+
+  for i in range(1, namelen):
+    name = tree.xpath('//table[@id="myTable"]/tr[%d]/td[1]/text()' % (i+1))
+    for x in name:
+      if name:
+        nameList.append(x.lower())
+
+  return nameList
+
+
 def tests(year):
 
-  with open("../gg%d.json" % (year)) as file_data:
+  with open("gg%d.json" % (year)) as file_data:
     data = json.load(file_data)
 
   text = [[nltk.word_tokenize(w["text"].lower()),w["text"].lower()] for w in data]
@@ -383,13 +462,58 @@ def tests(year):
   worldMovies = []
 
   # ------------------------ this part is for getting american movies ---------------------------
-  americanMovies = getAmericanMovies(year) # this list is only used to remove the unnecessary result for foreign movie
+  # americanMovies = getAmericanMovies(year) # this list is only used to remove the unnecessary result for foreign movie
 
   # ------------------------ this part is for getting world movies ------------------------------
   worldMovies = [getWorldMovies(year), getWorldMovies(year-1)]
+  nominees[OFFICIAL_AWARDS[4]] = getMovieNominees(text, ['comedy', 'musical'], worldMovies, 4)
+  '''
+  # get female name dictionary
+  femaleNameList = getNameDictionary('female')
 
+  tweetsBuffer = []
+  for x in text:
+    if 'actress' in x[0] or 'she' in x[0]:
+      tweetsBuffer.append(x)
+
+
+  namePattern = [r'beats? (\w+) (\w+)', r'love (\w+) (\w+)', r'^(\w+) (\w+)\W*[,!]', r'to (\w+) (\w+)\W*?[,!]']
+  
+  #pattern = re.compile()
+  names = []
+  for x in tweetsBuffer:
+    for pattern in namePattern:
+      result = re.findall(pattern, x[1])
+      if result:
+        for y in result:
+          useless = False
+          for token in y:
+            if token in stopwords or token in actressUselessWords or token in commonUselessWords:
+              useless = True
+              break
+          if not useless:
+            if y[0] in femaleNameList:
+              names.append(y)
+    
+  resultList = nltk.FreqDist(names)
+  print resultList.most_common(20)
+  '''
 
   return
+
+def testTweets(year):
+  with open("gg%d.json" % (year)) as file_data:
+    data = json.load(file_data)
+
+  text = [[nltk.word_tokenize(w["text"].lower()),w["text"].lower()] for w in data]
+
+  actressNameList = ['emily blunt', 'judi dench', 'meryl streep', 'helen hunt', 'amy adams']
+
+  for actress in actressNameList:
+    print actress+':'
+    for x in text:
+      if actress in x[1]:
+        print x[1]
 
 
 def main():
@@ -399,9 +523,9 @@ def main():
     run when grading. Do NOT change the name of this function or
     what it returns.'''
     # Your code here
-    get_nominees(2013)
-    # tests(2013)
-
+    #get_nominees(2013)
+    tests(2013)
+    #testTweets(2013)
     return
 
 if __name__ == '__main__':
