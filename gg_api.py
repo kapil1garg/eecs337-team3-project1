@@ -69,7 +69,8 @@ def get_hosts(year):
     bigrams = []
     for i in tweet_iterator:
         current_word_list = re.findall(r"['a-zA-Z]+\b", raw_tweets[i]['text'].lower())
-        if 'rt' not in current_word_list and ('host' in current_word_list or 'hosts' in current_word_list):
+        if 'rt' not in current_word_list and ('host' in current_word_list or
+                                              'hosts' in current_word_list):
             cleaned_current_words = [w for w in current_word_list if w not in stop_words]
             bigrams.extend(nltk.bigrams(cleaned_current_words))
     bigram_freq = nltk.FreqDist(bigrams)
@@ -85,6 +86,9 @@ def get_hosts(year):
     else:
         hosts = [top_50_bigrams[0][0][0] + ' ' + top_50_bigrams[0][0][1]]
     return hosts
+
+def host_sentiment(year):
+    pass
 
 def get_awards(year):
     '''Awards is a list of strings. Do NOT change the name
