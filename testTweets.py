@@ -144,7 +144,7 @@ class InfoBundle():
 				if x != y and x in y:
 					overLap = True
 					break
-				if x==''.join(nltk.word_tokenize(y)):
+				if x==''.join(nltk.word_tokenize(y)) and len(nltk.word_tokenize(y))>1:
 					overLap = True
 					break
 			if not overLap:
@@ -161,9 +161,9 @@ class InfoBundle():
 				for match in matches:
 					match = trim(match)
 					if checkValidation(match):
-						#print match
 						candidates.append(match)
 		candidates = list(set(candidates))
+		print candidates
 		candidates = self.removeLessFrequentCandidates(candidates)
 		candidates = self.removeSinger(candidates)
 		print candidates
@@ -246,10 +246,8 @@ class InfoBundle():
 		candidates = self.getCandidates(patterns)
 		candidates = self.checkExistance(candidates)
 		candidates = self.removeOverlapping(candidates)
-		if 'brave' in candidates:
-			print 66666666666666666
-		cartoonCandidates = self.getOrderedCandidates(['cartoon', 'child', 'animated', 'kid'], ['television', 'tv', 'series', 'drama', 'musical'], candidates)
-		
+		cartoonCandidates = self.getOrderedCandidates(['cartoon', 'child', 'animated feature', 'animated film'], ['television', 'tv', 'series', 'drama', 'musical'], candidates)
+		print cartoonCandidates
 
 		for candidate in cartoonCandidates:
 			tokens = nltk.word_tokenize(candidate)
@@ -376,9 +374,27 @@ class InfoBundle():
 		return nominees
 
 	def getMovieSupportingActress(self, patterns, femaleNameList):
+		nominees = []
+		candidates = self.getCandidates(patterns)
+		candidates = self.checkExistance(candidates)
+		candidates = self.removeOverlapping(candidates)
 
+		supportingMovieActressNominees = self.getOrderedCandidates(['supporting'], ['mini', 'television', 'tv', 'series'], candidates)
+		supportingMovieActressNominees = self.getOrderedCandidates(['she', 'actress'], ['actor', 'director'], supportingMovieActressNominees)
 
-		return
+		for candidate in supportingMovieActressNominees:
+			tokens =nltk.word_tokenize(candidate)
+			if len(tokens)<2 or len(tokens)>3:
+				continue
+			if tokens[0] not in femaleNameList or tokens[1] in ['and', '&']:
+				continue
+			nominees.append(candidate)
+			if len(candidate) == 5:
+				break
+
+		winner = nominees[0]
+		print 'supportingMovieActressNominees:', nominees
+		return nominees
 
 	def getMovieSupportingActor(self, patterns, maleNameList):
 		nominees = []
@@ -389,7 +405,7 @@ class InfoBundle():
 		supportingMovieActorNominees = self.getOrderedCandidates(['supporting'], ['mini', 'television', 'tv', 'series'], candidates)
 		supportingMovieActorNominees = self.getOrderedCandidates(['he', 'actor'], ['actress', 'director'], supportingMovieActorNominees)
 
-		for candidate in comedyActorNominees:
+		for candidate in supportingMovieActorNominees:
 			tokens =nltk.word_tokenize(candidate)
 			if len(tokens)<2 or len(tokens)>3:
 				continue
@@ -402,6 +418,351 @@ class InfoBundle():
 		winner = nominees[0]
 		print 'supportingMovieActorNominees:', nominees
 		return nominees
+
+	def getDirectorCandidates(self, patterns, allNameList):
+		nominees = []
+		candidates = self.getCandidates(patterns)
+		candidates = self.checkExistance(candidates)
+		candidates = self.removeOverlapping(candidates)
+
+		directorNominees = self.getOrderedCandidates(['director'], ['mini', 'television', 'tv', 'series'], candidates)
+
+		for candidate in directorNominees:
+			tokens =nltk.word_tokenize(candidate)
+			if len(tokens)<2 or len(tokens)>3:
+				continue
+			if tokens[0] not in allNameList or tokens[1] in ['and', '&']:
+				continue
+			nominees.append(candidate)
+			if len(candidate) == 5:
+				break
+
+		winner = nominees[0]
+		print 'directorNominees:', nominees
+		return nominees
+
+	def getScreenPlayCandidates(self, patterns, allNameList):
+		nominees = []
+		candidates = self.getCandidates(patterns)
+		candidates = self.checkExistance(candidates)
+		candidates = self.removeOverlapping(candidates)
+
+		screenPlayNominees = self.getOrderedCandidates(['screenplay'], ['mini', 'television', 'tv', 'series'], candidates)
+
+		for candidate in screenPlayNominees:
+			tokens =nltk.word_tokenize(candidate)
+			if len(tokens)<2 or len(tokens)>3:
+				continue
+			if tokens[0] not in allNameList or tokens[1] in ['and', '&']:
+				continue
+			nominees.append(candidate)
+			if len(candidate) == 5:
+				break
+
+		winner = nominees[0]
+		print 'screenPlayNominees:', nominees
+		return nominees
+
+	def getOriginalScoreCandidates(self, patterns, allNameList):
+		nominees = []
+		candidates = self.getCandidates(patterns)
+		candidates = self.checkExistance(candidates)
+		candidates = self.removeOverlapping(candidates)
+
+		originalScoreNominees = self.getOrderedCandidates(['original'], ['mini', 'television', 'tv', 'series'], candidates)
+		originalScoreNominees = self.getOrderedCandidates(['score'], [], originalScoreNominees)
+
+		for candidate in originalScoreNominees:
+			tokens =nltk.word_tokenize(candidate)
+			if len(tokens)<2 or len(tokens)>3:
+				continue
+			if tokens[0] not in allNameList or tokens[1] in ['and', '&']:
+				continue
+			nominees.append(candidate)
+			if len(candidate) == 5:
+				break
+
+		winner = nominees[0]
+		print 'originalScoreNominees:', nominees
+		return nominees
+
+	def getOriginalSongCandidates(self, patterns, allNameList):
+		nominees = []
+		candidates = self.getCandidates(patterns)
+		candidates = self.checkExistance(candidates)
+		candidates = self.removeOverlapping(candidates)
+
+		originalSongNominees = self.getOrderedCandidates(['original'], ['mini', 'television', 'tv', 'series'], candidates)
+		originalSongNominees = self.getOrderedCandidates(['song'], [], originalSongNominees)
+
+		for candidate in originalSongNominees:
+			tokens =nltk.word_tokenize(candidate)
+			if len(tokens)==2 or len(tokens)==3:
+				if tokens[0] in allNameList and tokens[1] not in ['and', '&']:
+					continue
+			nominees.append(candidate)
+			if len(candidate) == 5:
+				break
+
+		winner = nominees[0]
+		print 'originalSongNominees:', nominees
+		return nominees
+
+	def getDramaSeriesCandidates(self, patterns, allNameList):
+		nominees = []
+		candidates = self.getCandidates(patterns)
+		candidates = self.checkExistance(candidates)
+		candidates = self.removeOverlapping(candidates)
+
+		dramaSeriesNominees = self.getOrderedCandidates(['series', 'tv', 'television'], ['movie', 'film', 'motion picture'], candidates)
+		dramaSeriesNominees = self.getOrderedCandidates(['drama'], [], dramaSeriesNominees)
+
+		for candidate in dramaSeriesNominees:
+			tokens =nltk.word_tokenize(candidate)
+			if len(tokens)==2 or len(tokens)==3:
+				if tokens[0] in allNameList and tokens[1] not in ['and', '&']:
+					continue
+			nominees.append(candidate)
+			if len(candidate) == 5:
+				break
+
+		winner = nominees[0]
+		print 'dramaSeriesNominees:', nominees
+		return nominees
+
+	def getComedySeriesCandidates(self, patterns, allNameList):
+		nominees = []
+		candidates = self.getCandidates(patterns)
+		candidates = self.checkExistance(candidates)
+		candidates = self.removeOverlapping(candidates)
+
+		comedySeriesNominees = self.getOrderedCandidates(['series', 'tv', 'television'], ['movie', 'film', 'motion picture'], candidates)
+		comedySeriesNominees = self.getOrderedCandidates(['comedy', 'musical'], ['drama'], comedySeriesNominees)
+
+		for candidate in comedySeriesNominees:
+			tokens =nltk.word_tokenize(candidate)
+			if len(tokens)==2 or len(tokens)==3:
+				if tokens[0] in allNameList and tokens[1] not in ['and', '&']:
+					continue
+			nominees.append(candidate)
+			if len(candidate) == 5:
+				break
+
+		winner = nominees[0]
+		print 'comedySeriesNominees:', nominees
+		return nominees
+
+	def getMiniSeriesCandidates(self, patterns, allNameList):
+		nominees = []
+		candidates = self.getCandidates(patterns)
+		candidates = self.checkExistance(candidates)
+		candidates = self.removeOverlapping(candidates)
+
+		miniSeriesNominees = self.getOrderedCandidates(['series', 'tv', 'television', 'mini'], ['movie', 'film'], candidates)
+		miniSeriesNominees = self.getOrderedCandidates([], ['drama','comedy', 'musical'], miniSeriesNominees)
+
+		for candidate in miniSeriesNominees:
+			tokens =nltk.word_tokenize(candidate)
+			if len(tokens)==2 or len(tokens)==3:
+				if tokens[0] in allNameList and tokens[1] not in ['and', '&']:
+					continue
+			nominees.append(candidate)
+			if len(candidate) == 5:
+				break
+
+		winner = nominees[0]
+		print 'miniSeriesNominees:', nominees
+		return nominees
+
+	def getMiniSeriesActressCandidates(self, patterns, femaleNameList):
+		nominees = []
+		candidates = self.getCandidates(patterns)
+		candidates = self.checkExistance(candidates)
+		candidates = self.removeOverlapping(candidates)
+
+		miniActressNominees = self.getOrderedCandidates(['series', 'tv', 'television', 'mini'], ['movie', 'film'], candidates)
+		miniActressNominees = self.getOrderedCandidates(['she', 'actress'], ['drama','comedy', 'musical', 'he', 'actor'], miniActressNominees)
+
+		for candidate in miniActressNominees:
+			tokens =nltk.word_tokenize(candidate)
+			if len(tokens)<2 or len(tokens)>3:
+				continue
+			if tokens[0] not in femaleNameList or tokens[1] in ['and', '&']:
+				continue
+			nominees.append(candidate)
+			if len(candidate) == 5:
+				break
+
+		winner = nominees[0]
+		print 'miniActressNominees:', nominees
+		return nominees
+
+	def getMiniSeriesActorCandidates(self, patterns, maleNameList):
+		nominees = []
+		candidates = self.getCandidates(patterns)
+		candidates = self.checkExistance(candidates)
+		candidates = self.removeOverlapping(candidates)
+
+		miniActorNominees = self.getOrderedCandidates(['series', 'tv', 'television', 'mini'], ['movie', 'film'], candidates)
+		miniActorNominees = self.getOrderedCandidates(['he', 'actor'], ['drama','comedy', 'musical', 'she', 'actress'], miniActorNominees)
+
+		for candidate in miniActorNominees:
+			tokens =nltk.word_tokenize(candidate)
+			if len(tokens)<2 or len(tokens)>3:
+				continue
+			if tokens[0] not in maleNameList or tokens[1] in ['and', '&']:
+				continue
+			nominees.append(candidate)
+			if len(candidate) == 5:
+				break
+
+		winner = nominees[0]
+		print 'miniActorNominees:', nominees
+		return nominees
+
+		# -------------------------------------------------------------------------------
+	def getDramaSeriesActressCandidates(self, patterns, femaleNameList):
+		nominees = []
+		candidates = self.getCandidates(patterns)
+		candidates = self.checkExistance(candidates)
+		candidates = self.removeOverlapping(candidates)
+		dramaSeriesActressNominees = self.getOrderedCandidates(['drama'], ['movie', 'film'], candidates)
+		dramaSeriesActressNominees = self.getOrderedCandidates(['she', 'actress'], ['actor', 'director', 'supporting'], dramaSeriesActressNominees)
+		dramaSeriesActressNominees = self.getOrderedCandidates(['tv', 'television', 'series'], [], dramaSeriesActressNominees)
+
+		for candidate in dramaSeriesActressNominees:
+			tokens =nltk.word_tokenize(candidate)
+			if len(tokens)<2 or len(tokens)>3:
+				continue
+			if tokens[0] not in femaleNameList or tokens[1] in ['and', '&']:
+				continue
+			nominees.append(candidate)
+			if len(candidate) == 5:
+				break
+
+		winner = nominees[0]
+		print 'dramaSeriesActressNominees:', nominees
+		return nominees
+
+	def getDramaSeriesActorCandidates(self, patterns, maleNameList):
+		nominees = []
+		candidates = self.getCandidates(patterns)
+		candidates = self.checkExistance(candidates)
+		candidates = self.removeOverlapping(candidates)
+		dramaSeriesActorNominees = self.getOrderedCandidates(['drama'], [], candidates)
+		dramaSeriesActorNominees = self.getOrderedCandidates(['he', 'actor'], ['actress', 'director', 'supporting'], dramaSeriesActorNominees)
+		dramaSeriesActorNominees = self.getOrderedCandidates(['television', 'tv', 'series'], [], dramaSeriesActorNominees)
+
+		for candidate in dramaSeriesActorNominees:
+			tokens =nltk.word_tokenize(candidate)
+			if len(tokens)<2 or len(tokens)>3:
+				continue
+			if tokens[0] not in maleNameList or tokens[1] in ['and', '&']:
+				continue
+			nominees.append(candidate)
+			if len(candidate) == 5:
+				break
+
+		winner = nominees[0]
+		print 'dramaSeriesActorNominees:', nominees
+		return nominees
+
+	def getComedySeriesActressCandidates(self, patterns, femaleNameList):
+		nominees = []
+		candidates = self.getCandidates(patterns)
+		candidates = self.checkExistance(candidates)
+		candidates = self.removeOverlapping(candidates)
+		comedySeriesActressNominees = self.getOrderedCandidates(['comedy', 'musical'], [], candidates)
+		comedySeriesActressNominees = self.getOrderedCandidates(['she', 'actress'], ['actor', 'director', 'supporting'], comedySeriesActressNominees)
+		comedySeriesActressNominees = self.getOrderedCandidates(['television', 'tv', 'series'], ['drama'], comedySeriesActressNominees)
+
+		for candidate in comedySeriesActressNominees:
+			tokens =nltk.word_tokenize(candidate)
+			if len(tokens)<2 or len(tokens)>3:
+				continue
+			if tokens[0] not in femaleNameList or tokens[1] in ['and', '&']:
+				continue
+			nominees.append(candidate)
+			if len(candidate) == 5:
+				break
+
+		winner = nominees[0]
+		print 'comedySeriesActressNominees:', nominees
+		return nominees
+
+	def getComedySeriesActorCandidates(self, patterns, maleNameList):
+		nominees = []
+		candidates = self.getCandidates(patterns)
+		candidates = self.checkExistance(candidates)
+		candidates = self.removeOverlapping(candidates)
+
+		comedySeriesActorNominees = self.getOrderedCandidates(['comedy', 'musical'], [], candidates)
+		comedySeriesActorNominees = self.getOrderedCandidates(['he', 'actor'], ['actress', 'director', 'supporting'], comedySeriesActorNominees)
+		comedySeriesActorNominees = self.getOrderedCandidates(['television', 'tv', 'series'], ['drama'], comedySeriesActorNominees)
+
+		for candidate in comedySeriesActorNominees:
+			tokens =nltk.word_tokenize(candidate)
+			if len(tokens)<2 or len(tokens)>3:
+				continue
+			if tokens[0] not in maleNameList or tokens[1] in ['and', '&']:
+				continue
+			nominees.append(candidate)
+			if len(candidate) == 5:
+				break
+
+		winner = nominees[0]
+		print 'comedySeriesActorNominees:', nominees
+		return nominees
+
+	def getSeriesSupportingActress(self, patterns, femaleNameList):
+		nominees = []
+		candidates = self.getCandidates(patterns)
+		candidates = self.checkExistance(candidates)
+		candidates = self.removeOverlapping(candidates)
+
+		supportingSeriesActressNominees = self.getOrderedCandidates(['supporting'], [], candidates)
+		supportingSeriesActressNominees = self.getOrderedCandidates(['she', 'actress'], ['actor', 'director'], supportingSeriesActressNominees)
+		supportingSeriesActressNominees = self.getOrderedCandidates(['mini', 'television', 'tv', 'series'], [], supportingSeriesActressNominees)
+
+		for candidate in supportingSeriesActressNominees:
+			tokens =nltk.word_tokenize(candidate)
+			if len(tokens)<2 or len(tokens)>3:
+				continue
+			if tokens[0] not in femaleNameList or tokens[1] in ['and', '&']:
+				continue
+			nominees.append(candidate)
+			if len(candidate) == 5:
+				break
+
+		winner = nominees[0]
+		print 'supportingSeriesActressNominees:', nominees
+		return nominees
+
+	def getSeriesSupportingActor(self, patterns, maleNameList):
+		nominees = []
+		candidates = self.getCandidates(patterns)
+		candidates = self.checkExistance(candidates)
+		candidates = self.removeOverlapping(candidates)
+
+		supportingSeriesActorNominees = self.getOrderedCandidates(['supporting'], [], candidates)
+		supportingSeriesActorNominees = self.getOrderedCandidates(['he', 'actor'], ['actress', 'director'], supportingSeriesActorNominees)
+		supportingSeriesActorNominees = self.getOrderedCandidates(['mini', 'television', 'tv', 'series'], [], supportingSeriesActorNominees)
+
+		for candidate in supportingSeriesActorNominees:
+			tokens =nltk.word_tokenize(candidate)
+			if len(tokens)<2 or len(tokens)>3:
+				continue
+			if tokens[0] not in maleNameList or tokens[1] in ['and', '&']:
+				continue
+			nominees.append(candidate)
+			if len(candidate) == 5:
+				break
+
+		winner = nominees[0]
+		print 'supportingSeriesActorNominees:', nominees
+		return nominees
+
+		# --------------------------------------------------------------------------------
 
 	def getTargetTweets(self, keywords, nowords):
 		tweets = []
@@ -444,8 +805,6 @@ class InfoBundle():
 
 	# first keywoard is and / 2d list is for or
 	def getOrderedCandidates(self, keywords, nowords, candidates):
-		if 'brave' in candidates:
-			print 6666666666666666
 		frequency = [[candidate, 0] for candidate in candidates]
 		# firstly get the useful tweets
 		tweets = self.getTargetTweets(keywords, nowords)
@@ -463,12 +822,16 @@ class InfoBundle():
 			for candidate in frequency:
 				if tweet.contains([candidate[0]], 'raw'):
 					candidate[1]+=1
-		finalCandidates = [x[0] for x in frequency if x[1]>25]
+
+		finalCandidates = [x[0] for x in frequency if x[1]>19]
 		return finalCandidates
 
 	def removeSinger(self, candidates):
 		candidates = [candidate for candidate in candidates if candidate not in famousSingers]
 		return candidates
+
+	def getWinners(self, patterns, maleNameList, femaleNameList):
+		return
 
 	def __str__(self):
 		return self.data
@@ -498,8 +861,6 @@ def checkValidation(phrase):
 	elif len(tokens)>1:
 		if tokens[0] in pronouns:
 			return False
-
-
 	return True
 
 def trim(phrase):
@@ -532,7 +893,7 @@ def readCorpus(year):
 
 def writeTweets(data):
 	# drama movie
-	dramaMovies = ['brave']
+	dramaMovies = ['frankenweenie']
 	for drama in dramaMovies:
 		result = data.search([drama], 'raw')
 		print drama+':'
@@ -557,8 +918,9 @@ def main():
 		allData = readCorpus(year)
 		
 		goodPatterns = [r'hop[(?:es?)(?:ing)](?:\sthat)?\s+(.*?)\sw[io]ns?',
-										r'wants?\s+(.*?)\s+to\s+win', r'better\sthan\s(.*?)[.?!]',
-										r'movie called (.*)[.!?]', r'[(?:film)(?:movie)] - (.*?) -']
+										r'wants?\s+(.*?)\s+to\s+win', r'better\sthan\s(.*?)[.?!,]',
+										r'movie called (.*)[.!?,]', r'[(?:film)(?:movie)] - (.*?) -', 
+										r'want to see (.*?)[.!,?]', r'and (.*?) were better than']
 		testPatterns = []
 		#allData.getComedyMovieCandidates(goodPatterns, femaleNameList+maleNameList+additionalmaleNameList)
 		#allData.getDramaMovieCandidates(goodPatterns, femaleNameList+maleNameList+additionalmaleNameList)
