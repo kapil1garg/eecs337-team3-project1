@@ -1,3 +1,5 @@
+'''Version 0.2'''
+
 import sys
 import json
 import re
@@ -69,7 +71,7 @@ def get_hosts(year):
     bigrams = []
     for i in tweet_iterator:
         current_word_list = re.findall(r"['a-zA-Z]+\b", raw_tweets[i]['text'].lower())
-        if 'rt' not in current_word_list and
+        if 'rt' not in current_word_list and \
             ('host' in current_word_list or 'hosts' in current_word_list):
             cleaned_current_words = [w for w in current_word_list if w not in stop_words]
             bigrams.extend(nltk.bigrams(cleaned_current_words))
@@ -103,7 +105,7 @@ def get_nominees(year):
     # Your code here
     return nominees
 
-def get_winners(year):
+def get_winner(year):
     '''Winners is a list of dictionaries with the hard coded award
     names as keys, and each entry a list containing a single string.
     Do NOT change the name of this function or what it returns.'''
