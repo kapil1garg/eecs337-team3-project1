@@ -40,7 +40,6 @@ OFFICIAL_AWARDS = ['cecil b. demille award',
                    'best performance by an actress in a supporting role in a series, mini-series or motion picture made for television',
                    'best performance by an actor in a supporting role in a series, mini-series or motion picture made for television']
 
-# NOAH using this to test out my get presenters function. Assuming we can get all of the correct nominees
 NOMINEES_2013 = {'cecil b. demille award': ['Jodie Foster'],
                    'best motion picture - drama': ['Argo', 'Django Unchained', 'Life of Pi', 'Lincoln', 'Zero Dark Thirty'] ,
                    'best performance by an actress in a motion picture - drama' : ['Jessica Chastain', 'Marion Cotillard', 'Helen Mirren', 'Naomi Watts', 'Rachel Weisz'],
@@ -189,7 +188,7 @@ class Award(object):
                 
                 clean_tweet = clean(tweet)
                 clean_tweet = re.sub('(\'s)',' ', clean_tweet)
-                if re.search(re_Presenters, clean_tweet): #[NOAH] and 'best' in tweet?
+                if re.search(re_Presenters, clean_tweet):
    
                     lower_clean_tweet = lower_case_tweet(clean_tweet) 
                     award_name = self.name
@@ -548,14 +547,12 @@ def pre_ceremony():
 
     print 'STARTING PRE CEREMONY\n\n'
     
-    #years = [2013, 2015]
     years = [2013]
         
     for year in years:
         
         print 'Reading tweets from %s...' % year
         
-        # [NOAH] 2/22 2:01
         cased_clean_tweets_path = path = './cased_clean_tweets%s.json' % year
         raw_tweets = load_data(year)
         cased_tweets = presenters_remove_stop_words_all(raw_tweets)
