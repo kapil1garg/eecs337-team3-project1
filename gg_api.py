@@ -7,8 +7,8 @@ import collections
 import pickle
 import operator
 import pprint
-#from lxml import html
-#import requests
+from lxml import html
+import requests
 import sys
 import json
 import re
