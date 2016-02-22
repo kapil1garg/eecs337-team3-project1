@@ -3,9 +3,14 @@ import re
 import numpy
 import sys
 import nltk
+from nltk.corpus import names, stopwords
+from nltk.tokenize import *
 import os.path
 import collections
 import pickle
+import operator
+import difflib
+import copy
 
 
 OFFICIAL_AWARDS = ['cecil b. demille award',
@@ -36,7 +41,7 @@ OFFICIAL_AWARDS = ['cecil b. demille award',
                    'best performance by an actor in a supporting role in a series, mini-series or motion picture made for television']
 
 # NOAH using this to test out my get presenters function. Assuming we can get all of the correct nominees
-NOMINEES_2013 = {'cecil b. demille award': [],
+NOMINEES_2013 = {'cecil b. demille award': ['Jodie Foster'],
                    'best motion picture - drama': ['Argo', 'Django Unchained', 'Life of Pi', 'Lincoln', 'Zero Dark Thirty'] ,
                    'best performance by an actress in a motion picture - drama' : ['Jessica Chastain', 'Marion Cotillard', 'Helen Mirren', 'Naomi Watts', 'Rachel Weisz'],
                    'best performance by an actor in a motion picture - drama' : ['Daniel Day-Lewis', 'Richard Gere', 'John Hawkes', 'Joaquin Phoenix', 'Denzel Washington'],
@@ -63,35 +68,75 @@ NOMINEES_2013 = {'cecil b. demille award': [],
                    'best performance by an actress in a supporting role in a series, mini-series or motion picture made for television' : ['Maggie Smith', 'Hayden Panettiere', 'Archie Panjabi', 'Sarah Paulson', 'Sofia Vergara'],
                    'best performance by an actor in a supporting role in a series, mini-series or motion picture made for television' : ['Ed Harris', 'Max Greenfield', 'Danny Houston', 'Mandy Patinkin', 'Eric Stonestreet']}
 
-AWARDS_LISTS = [['cecil', 'demille', 'award'],
-                ['best', 'motion picture', 'drama'], # no actor or actress
-                ['best', 'actress', 'drama'],
-                ['best', 'actor', 'drama'],
-                ['best', 'motion picture', 'comedy', 'musical'], # no actor or actress
-                ['best', 'actress', 'comedy', 'musical'],
-                ['best', 'actor', 'comedy', 'musical'],
-                ['best', 'animated'],
-                ['best', 'foreign'],
-                ['best', 'actress', 'supporting'],
-                ['best', 'actor', 'supporting'],
-                ['best', 'director'],
-                ['best', 'screenplay'],
-                ['best', 'score'],
-                ['best', 'song'],
-                ['best', 'television', 'drama'], # no actor or actress
-                ['best', 'actress', 'television', 'drama'],
-                ['best', 'actor', 'television', 'drama'],
-                ['best', 'television', 'comedy', 'musical'], # no actor or actress
-                ['best', 'actress', 'television', 'comedy', 'musical'],
-                ['best', 'actor', 'television', 'comedy', 'musical'],
-                ['best', 'mini series', 'motion picture', 'television'], # mini series OR motion picture
-                ['best', 'actress', 'mini series', 'motion picture', 'television'], # mini series OR motion picture
-                ['best', 'actor', 'mini series', 'motion picture', 'television'],
-                ['best', 'actress', 'supporting', 'series', 'mini series', 'motion picture', 'television'], # series OR mini series OR motion picture
-                ['best', 'actor', 'supporting', 'series', 'mini series', 'motion picture', 'television']] # series OR mini series OR motion picture
+# Dictionary used to match title of a movie
+# { AWARD_NAME : [[WORDS MUST BE IN THE TWEET], [WORDS CANT BE IN THE TWEET], [>= 1 WORD MUST BE IN TWEET]] }
+AWARDS_LISTS = {'cecil b. demille award': [['cecil', 'demille', 'award'], [], []],
+                'best motion picture - drama': [['best', 'motion picture', 'drama'], ['actor', 'actress', 'television'], []], # no actor or actress
+                'best performance by an actress in a motion picture - drama' : [['best', 'actress', 'drama'], ['television'], []],
+                'best performance by an actor in a motion picture - drama' : [['best', 'actor', 'drama'], ['television'], []],
+                'best motion picture - comedy or musical' : [['best', 'motion picture', 'comedy', 'musical'], ['actor', 'actress', 'television'], []], # no actor or actress
+                'best performance by an actress in a motion picture - comedy or musical' : [['best', 'actress', 'comedy', 'musical'], [], []],
+                'best performance by an actor in a motion picture - comedy or musical' : [['best', 'actor', 'comedy', 'musical'], [], []],
+                'best animated feature film' : [['best', 'animated'], [], []],
+                'best foreign language film' : [['best', 'foreign'], [], []],
+                'best performance by an actress in a supporting role in a motion picture' : [['best', 'actress', 'supporting'], ['television'], []],
+                'best performance by an actor in a supporting role in a motion picture' : [['best', 'actor', 'supporting'], ['television'], []],
+                'best director - motion picture' : [['best', 'director'], [], []],
+                'best screenplay - motion picture' : [['best', 'screenplay'], [], []],
+                'best original score - motion picture' : [['best', 'score'], [], []],
+                'best original song - motion picture' : [['best', 'song'], [], []],
+                'best television series - drama' : [['best', 'television', 'drama'], ['actor', 'actress'], []], # no actor or actress
+                'best performance by an actress in a television series - drama' : [['best', 'actress', 'television', 'drama'], [], []],
+                'best performance by an actor in a television series - drama' : [['best', 'actor', 'television', 'drama'], [], []],
+                'best television series - comedy or musical' : [['best', 'television', 'comedy', 'musical'], ['actor', 'actress'], []], # no actor or actress
+                'best performance by an actress in a television series - comedy or musical' : [['best', 'actress', 'television', 'comedy', 'musical'], [], []],
+                'best performance by an actor in a television series - comedy or musical' : [['best', 'actor', 'television', 'comedy', 'musical'], [], []],
+                'best mini-series or motion picture made for television' : [['best', 'mini series', 'motion picture', 'television'], ['actor', 'actress'], ['mini', 'series', 'motion picture']], # mini series OR motion picture
+                'best performance by an actress in a mini-series or motion picture made for television' : [['best', 'actress', 'television'], [], ['mini series', 'motion picture']], # mini series OR motion picture
+                'best performance by an actor in a mini-series or motion picture made for television' : [['best', 'actor', 'television'], [], ['mini series', 'motion picture']],
+                'best performance by an actress in a supporting role in a series, mini-series or motion picture made for television' : [['best', 'actress', 'supporting', 'television'], [], [' mini ', ' series ', 'motion picture']], # series OR mini series OR motion picture
+                'best performance by an actor in a supporting role in a series, mini-series or motion picture made for television' : [['best', 'actor', 'supporting', 'television'], [], [' mini ', ' series ', 'motion picture']]} # series OR mini series OR motion picture
 
-stop_words = ['.', ',', '!', '?', '(', '-', ' on ', ' the ', ' male ', ' female ', ' in ', ' a ', ' is ', ' for ', ' at ', ' golden ', ' globes ', ' by ', ' an ', ' category ', ' and ', ' show ']
+
+stop_words = nltk.corpus.stopwords.words('english')
+stop_words.extend(['http', 'golden', 'globe', 'globes', 'goldenglobe', 'goldenglobes'])
+stop_words = set(stop_words)
+#stop_words = ['.', ',', '!', '?', '(', '-', ' on ', ' the ', ' male ', ' female ', ' in ', ' a ', ' is ', ' for ', ' at ', 'golden ', 'globes ', 'goldenglobes', 'gg', ' by ', ' an ', ' category ', ' and ', ' show ']
                 
+MALE_NAMES = nltk.corpus.names.words('male.txt')
+FEMALE_NAMES = nltk.corpus.names.words('female.txt')
+
+
+def load_data(year):
+    file_string = 'gg' + str(year) + '.json'
+    tweets = {}
+    with open(file_string, 'r') as f:
+        tweets = json.load(f)
+    return tweets
+
+def lower_case_tweet(tweet):
+    lower_tweet = tweet
+    lower_tweet = lower_tweet.lower()
+    return lower_tweet
+
+def remove_stop_words_tweet(stop_words, tweet):
+    stop_words_removed_tweet = tweet
+    tweet_words = tweet['text'].split()
+    stop_words_removed_tweet['text'] = ' '.join([w for w in tweet_words if w not in stop_words])
+    return stop_words_removed_tweet['text']
+
+def lower_case_all(tweets):
+    tweets = copy.deepcopy(tweets)
+    re_retweet = re.compile('rt', re.IGNORECASE)
+    return [lower_case_tweet(tweet) for tweet in tweets if not re.match(re_retweet, tweet)]
+
+NAMES = set(lower_case_all(MALE_NAMES + FEMALE_NAMES))
+
+def remove_stop_words_all(tweets):
+    tweets = copy.deepcopy(tweets)
+    stop_words = set(nltk.corpus.stopwords.words('english'))
+    return [remove_stop_words_tweet(stop_words, tweet) for tweet in tweets]
+
 
 class Award(object):
 
@@ -101,12 +146,13 @@ class Award(object):
         self.nominees = a_nominees
         self.winners = a_winners
         self.presenters = a_presenters
+        self.sentiments = a_sentiments
 
     def get_nominees(self, year):
 
         if not self.nominees:
 
-            self.nominees = NOMINEES_2013[self.name]
+            self.nominees = [' '.join(word_tokenize(nominee.lower())) for nominee in NOMINEES_2013[self.name]]
 
 
         return self.nominees
@@ -121,19 +167,82 @@ class Award(object):
 
     def get_presenters(self, year):
 
+        re_Presenters = re.compile('present|\sgave|\sgiving|\sgive|\sannounc|\sread|\sintroduc', re.IGNORECASE)
+        #re_Names = re.compile('([A-Z][a-z]+?\s[A-Z][\.-a-z]*?\s{,1}?[A-Z]?[-a-z]*?)[\s]', re.IGNORECASE)
+        re_Names = re.compile('([A-Z][a-z]+?\s[A-Z.]{,2}\s{,1}?[A-Z]?[-a-z]*?)[\s]', re.IGNORECASE)
+
+        names_lower = NAMES
+            
+        presentersCount = {}
         if not self.presenters:
 
-            self.presenters = []
+            if not (os.path.isfile("./clean_tweets%s.json" % year)):
+                raise Exception('Tweets for %s have not been preprocessed' % year)
 
+            with open("./clean_tweets%s.json" % year) as clean_file:
+                tweets = json.load(clean_file)
+
+            for tweet in tweets:
+                clean_tweet = clean(tweet)
+                lower_clean_tweet = clean_tweet
+                if re.search(re_Presenters, clean_tweet): #[NOAH] and 'best' in tweet?
+                    
+                    award_name = self.name
+                    award_words = AWARDS_LISTS[award_name][0]
+                    award_not_words = AWARDS_LISTS[award_name][1]
+                    award_either_words = AWARDS_LISTS[award_name][2]
+
+                        
+                    if all([word in lower_clean_tweet for word in award_words])\
+                       and not( any([not_word in lower_clean_tweet for not_word in award_not_words]))\
+                       and ((len(award_either_words) == 0) or any([either_word in lower_clean_tweet for either_word in award_either_words])):
+
+                        for name in re.findall(re_Names, clean_tweet):
+
+                            name_token = word_tokenize(name)
+                            if name_token and (name.lower() not in self.nominees) and any([token in names_lower for token in name_token]):
+
+                                dictName = str(name)
+
+                                        
+                                if dictName not in presentersCount.keys():
+
+                                    if dictName not in self.name:
+
+                                        renamed = False
+                                        #for key in presentersCount.keys():
+                                        #    if not renamed and difflib.SequenceMatcher(None, dictName, key).ratio() > 0.75:
+                                        #        print 'renaming %s to %s' % (dictName, key)
+                                        #        dictName = key
+                                        #        renamed = True
+
+                                        if renamed:
+                                            presentersCount[dictName] += 1
+                                        else:
+                                            
+                                            presentersCount[dictName] = 1
+
+                                else:
+
+                                    presentersCount[dictName] += 1
+
+                            #elif name_token and (name_token[-1] not in self.nominees) and any([name_token[-1] in key for key in presentersCount.keys()]):
+
+#                                    for key in presentersCount.keys()]):
+#                                    presentersCount[dictName] += 1
+
+
+
+            self.presenters = sorted(presentersCount.items(), key=operator.itemgetter(1), reverse=True)
         return self.presenters
 
-    def get_sentiments(year):
+    def get_sentiments(self, year):
 
         if not self.sentiments:
 
             self.sentiments = []
 
-        return sentiments
+        return self.sentiments
         
 def get_hosts(year):
     '''Hosts is a list of one or more strings. Do NOT change the name
@@ -156,7 +265,7 @@ def get_awards(year):
     
 
     if not (os.path.isfile("./clean_tweets%s.json" % year)):
-        raise Exception('Tweets for %s have not been preprocessed')
+        raise Exception('Tweets for %s have not been preprocessed' % year)
 
     with open("./clean_tweets%s.json" % year) as clean_file:
         tweets = json.load(clean_file)
@@ -178,7 +287,8 @@ def get_awards(year):
 
                 if stop_word in tweet:
 
-                    tweet = ' '.join([a.strip() for a in tweet.split(stop_word)])
+                    print stop_word
+                    #tweet = ' '.join([a.strip() for a in tweet.split(stop_word)])
 
             drama_match = re.search(re_Best_Drama, tweet)
             musical_match = re.search(re_Best_Musical, tweet)
@@ -333,7 +443,7 @@ def get_nominees(year):
     # Your code here
 
     path = './awards_%s_pickle.txt' % year
-    nominees = {}
+    nominees = []
     try:
         with open(path) as awards_file:
 
@@ -345,12 +455,12 @@ def get_nominees(year):
 
     for award in awards:
 
-        nominees[award.name] = award.nominees
+        nominees.append({award.name : award.nominees})
 
             
     return nominees
 
-def get_winners(year):
+def get_winner(year):
     '''Winners is a list of dictionaries with the hard coded award
     names as keys, and each entry a list containing a single string.
     Do NOT change the name of this function or what it returns.'''
@@ -364,10 +474,11 @@ def get_presenters(year):
     # Your code here
 
     path = './awards_%s_pickle.txt' % year
-    presenters = {}
+    presenters = []
     try:
         with open(path) as awards_file:
 
+            
             awards = pickle.load(awards_file)
 
     except NameError:
@@ -376,7 +487,7 @@ def get_presenters(year):
 
     for award in awards:
 
-        presenters[award.name] = award.presenters
+        presenters.append({award.name : award.presenters})
 
     
     return presenters
@@ -385,39 +496,37 @@ def clean(tweet, change_film=True):
 
     clean_tweet = tweet
 
+    if '#' in clean_tweet:
+
+        clean_tweet = ''.join([a for a in clean_tweet.split('#')])
+        
     if 'movie' in clean_tweet:
 
-        'motion picture'.join([a for a in clean_tweet.split('movie')])
+        clean_tweet = 'motion picture'.join([a for a in clean_tweet.split('movie')])
 
     if change_film and 'film' in clean_tweet:
 
-        'motion picture'.join([a for a in clean_tweet.split('film')])
+        clean_tweet = 'motion picture'.join([a for a in clean_tweet.split('film')])
 
     if 'picture' in clean_tweet and 'motion' not in clean_tweet:
 
-        'motion picture'.join([a for a in clean_tweet.split('picture')])
+        clean_tweet = 'motion picture'.join([a for a in clean_tweet.split('picture')])
 
     if ' tv ' in clean_tweet:
 
-        ' television '.join([a.strip() for a in clean_tweet.split(' tv ')])
+        clean_tweet = ' television '.join([a.strip() for a in clean_tweet.split(' tv ')])
 
     if 'comedy' in clean_tweet and 'musical' not in clean_tweet:
 
-        'comedy or musical'.join([a for a in clean_tweet.split('comedy')])
+        clean_tweet = 'comedy or musical'.join([a for a in clean_tweet.split('comedy')])
 
     elif 'musical' in clean_tweet and 'comedy' not in clean_tweet:
 
-        'comedy or musical'.join([a for a in clean_tweet.split('musical')])
+        clean_tweet = 'comedy or musical'.join([a for a in clean_tweet.split('musical')])
 
     elif 'musical or comedy' in clean_tweet:
 
-        'comedy or musical'.join([a for a in clean_tweet.split('musical or comedy')])
-
-    for stop_word in stop_words:
-
-        if stop_word in clean_tweet:
-
-            clean_tweet = ' '.join([a.strip() for a in clean_tweet.split(stop_word)])
+        clean_tweet = 'comedy or musical'.join([a for a in clean_tweet.split('musical or comedy')])
 
     return clean_tweet
 
@@ -430,33 +539,44 @@ def pre_ceremony():
     Do NOT change the name of this function or what it returns.'''
     # Your code here
 
-    # Clean the tweets of the given file path
-    #file_path = './gg2013.json'
+    print 'STARTING PRE CEREMONY\n\n'
     
-    #tweets = get_tweets(file_path)
-    #my_clean_tweets = clean_tweets(tweets)
+    #years = [2013, 2015]
+    years = [2013]
+        
+    for year in years:
+        
+        print 'Reading tweets from %s...' % year
 
-    # NOAH Need to write the clean tweets into a file here so that every other function can access them
+        # [NOAH] 2/19 16:17 commented these out for the sake of testing
+        #tweets_filepath = './gg%s.json' % year
+        #raw_tweets = get_raw_tweets(tweets_filepath)
+        #clean_tweets = get_clean_tweets(year, tweets=raw_tweets, re_clean=False)
+        #print '%s tweets clean' % year
+        
+        # [NOAH] 2/21 20:16
+        raw_tweets = load_data(year)
+        lower_clean_tweets = get_clean_tweets(year, tweets=raw_tweets, re_clean=True)
+
+        # Initialize all of the Awards objects using the OFFICIAL_AWARDS list
+        awards_path = './awards_%s_pickle.txt' % year
+        if not (os.path.isfile(awards_path)) or True:
+
+            print 'Initializing GG Awards for %s' % year
+            with open(awards_path, 'wb') as awards_file:
+                
+                awards_list = []
+                for award_name in OFFICIAL_AWARDS:
     
-    # Initialize all of the Awards objects using the OFFICIAL_AWARDS list
-    awards_path_2013 = './awards_2013_pickle.txt'
-    year = 2013
-    if not (os.path.isfile(awards_path_2013)):
+                    award = Award(award_name)
+                    nominees = award.get_nominees(year)
+                    winners = award.get_winners(year)
+                    presenters = award.get_presenters(year)
+                    sentiments = award.get_sentiments(year)
+                    award = Award(award_name, nominees, winners, presenters, sentiments)
+                    awards_list.append(award)
 
-        with open(awards_path_2013, 'wb') as awards_file:
-            
-            awards_2013 = []
-            for award_name in OFFICIAL_AWARDS:
-
-                award = Award(award_name)
-                nominees = award.get_nominees(year)
-                winners = award.get_winners(year)
-                presenters = awards.get_presenters(year)
-                sentiments = awards.get_sentiments(year)
-                award = Award(award_name, nominees, winners, presenters, sentiments)
-                awards_2013.append(award)
-
-            pickle.dump(awards_2013, awards_file)
+                pickle.dump(awards_list, awards_file)
     
     print "Pre-ceremony processing complete."
     return
@@ -472,45 +592,42 @@ def main():
     # PRE_CEREMONY MUST BE RUN BEFORE ALL OTHER API FUNCTIONS
     pre_ceremony()
 
-    nominees = get_nominees(2013)
-    print nominees
+    awards = get_awards(2013)
+    print awards
+    #nominees = get_nominees(2013)
+    #print nominees
+
+    presenters = get_presenters(2013)
+    print presenters
     
     return
 
-def get_tweets(path):
-    
-    with open(path) as json_file:
-        raw_tweets = json.load(json_file)
-    
-    tweets = [tweet["text"] for tweet in raw_tweets]
-    
-    return tweets
+def get_clean_tweets(year, tweets=None, re_clean=False):
 
-def clean_tweets(tweets):
-
-    path = './clean_tweets2013.json'
+    path = './clean_tweets%s.json' % year
     
-    if not (os.path.isfile(path)):
+    if (not (os.path.isfile(path)) or re_clean) and tweets:
         
-        re_retweet = re.compile('rt', re.IGNORECASE)
+        #re_retweet = re.compile('rt', re.IGNORECASE)
+        #stop_words = stopwords.words('english')
         
-        clean_tweets = []
-        for tweet in tweets:
-            
-            if not (re.match(re_retweet, tweet)):
-                    
-                clean_tweets.append(tweet)
-        
+        clean_tweets = remove_stop_words_all(tweets)
+        lower_clean_tweets = lower_case_all(clean_tweets)
         with open(path, 'w') as outfile:
             
-            json.dump(clean_tweets, outfile)
+            json.dump(lower_clean_tweets, outfile)
 
     else:
+        
+        try:  
+            with open(path, 'r') as datafile:
+                lower_clean_tweets = json.load(datafile)
+                
+        except IOError:
             
-        with open(path, 'r') as datafile:
-            clean_tweets = json.load(datafile)
+            print '%s does not exist. Provide get_clean_tweets(year, tweets) to create new file' % path
     
-    return clean_tweets
+    return lower_clean_tweets
     
 
 if __name__ == '__main__':
