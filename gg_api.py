@@ -140,7 +140,7 @@ AWARDS_LISTS = {'cecil b. demille award': [['cecil', 'demille', 'award'], [], []
                 'best performance by an actress in a supporting role in a series, mini-series or motion picture made for television' : [['best', 'actress', 'supporting', 'television'], [], [' mini ', ' series ', 'motion picture']], # series OR mini series OR motion picture
                 'best performance by an actor in a supporting role in a series, mini-series or motion picture made for television' : [['best', 'actor', 'supporting', 'television'], [], [' mini ', ' series ', 'motion picture']]} # series OR mini series OR motion picture
 
-    
+
 MALE_NAMES = nltk.corpus.names.words('male.txt')
 FEMALE_NAMES = nltk.corpus.names.words('female.txt')
 
@@ -212,7 +212,7 @@ class Award(object):
         re_Names = re.compile('([A-Z][a-z]+?\s[A-Z.]{,2}\s{,1}?[A-Z]?[-a-z]*?)[\s]')
 
         names_lower = NAMES
-            
+
         presentersCount = {}
         if not self.presenters:
 
@@ -224,18 +224,18 @@ class Award(object):
                 tweets = json.load(cased_clean_file)
 
             for tweet in tweets:
-                
+
                 clean_tweet = clean(tweet)
                 clean_tweet = re.sub('(\'s)',' ', clean_tweet)
                 if re.search(re_Presenters, clean_tweet):
-   
-                    lower_clean_tweet = lower_case_tweet(clean_tweet) 
+
+                    lower_clean_tweet = lower_case_tweet(clean_tweet)
                     award_name = self.name
                     award_words = AWARDS_LISTS[award_name][0]
                     award_not_words = AWARDS_LISTS[award_name][1]
                     award_either_words = AWARDS_LISTS[award_name][2]
 
-                        
+
                     if all([word in lower_clean_tweet for word in award_words])\
                        and not( any([not_word in lower_clean_tweet for not_word in award_not_words]))\
                        and ((len(award_either_words) == 0) or any([either_word in lower_clean_tweet for either_word in award_either_words])):
@@ -249,17 +249,17 @@ class Award(object):
                             if len(name_token) > 1:
                                 first_name = name_token[0]
                                 last_name = name_token[-1]
-                                
+
                                 if first_name in names_lower and last_name not in ' '.join(self.nominees):
-                                    
+
                                     if first_name not in award_name and last_name not in award_name:
-                                        
+
                                         if dictName not in presentersCount.keys():
-                                            
+
                                             presentersCount[dictName] = 1
-                                            
+
                                         else:
-                                            
+
                                             presentersCount[dictName] += 1
 
 
@@ -267,17 +267,17 @@ class Award(object):
             presenters_full = sorted(presentersCount.items(), key=operator.itemgetter(1), reverse=True)
 
             if len(presenters_full) > 1:
-                
+
                 if float(presenters_full[1][1]) / presenters_full[0][1] < 0.5:
 
                     self.presenters = [str(presenters_full[0][0])]
                 else:
-                    
+
                     self.presenters = [str(presenters_full[0][0]), str(presenters_full[1][0])]
             elif len(presenters_full) == 1:
 
                 self.presenters = [str(presenters_full[0][0])]
-                
+
         return self.presenters
 
     def get_sentiments(self, year):
@@ -287,7 +287,7 @@ class Award(object):
             self.sentiments = []
 
         return self.sentiments
-        
+
 def read_data(year):
     file_string = 'gg' + str(year) + '.json'
     with open(file_string, 'r') as f:
@@ -314,7 +314,7 @@ def trim_data(raw_data):
 
 def getMovieTitles(year):
     worldMovies = []
-    page = requests.get('https://en.wikipedia.org/wiki/%d_in_film' % (year-1))
+    page = requests.get('https://en.wikipedia.org/wiki/%d_in_film' % (int(year) - 1))
     tree = html.fromstring(page.content)
 
     for j in range(3, len(tree.xpath('//div[@id="mw-content-text"]/table'))-2):
@@ -2683,8 +2683,8 @@ def get_awards(year):
     re_Best_MotionPicture = re.compile('(best\s[a-zA-Z\s\(-]*?motion picture)', re.IGNORECASE)
     re_Best_Television = re.compile('(best\s[a-zA-Z\s\(-]*?television)', re.IGNORECASE)
     re_Best_Film = re.compile('(best\s[a-zA-Z\s\(-]*?film)', re.IGNORECASE)
-    
-        
+
+
     raw_tweets = load_data(year)
     n_tweets = len(raw_tweets)
     tweet_iterator = xrange(n_tweets)
@@ -2695,13 +2695,13 @@ def get_awards(year):
         current_word_list = re.findall(r"['a-zA-Z]+\b", raw_tweets[i]['text'].lower())
         if 'rt' not in current_word_list:
             processed_tweets.append(' '.join(current_word_list))
-            
+
     tweets = processed_tweets
 
-    
+
     awards = []
     for u_tweet in tweets:
-        
+
         if 'best' in u_tweet:
 
             tweet = u_tweet
@@ -2711,7 +2711,7 @@ def get_awards(year):
             comedy_match = re.search(re_Best_Comedy, tweet)
 
             if drama_match or musical_match or comedy_match:
-                
+
                 if drama_match:
 
                     for match_str in drama_match.groups():
@@ -2723,7 +2723,7 @@ def get_awards(year):
                             award = ' motion picture '.join([a.strip() for a in award.split(' film ')])
 
                         awards.append(format_award(' - drama'.join([a.strip() for a in award.split('drama')])))
-                            
+
                 if musical_match and not comedy_match:
 
                     for match_str in musical_match.groups():
@@ -2743,7 +2743,7 @@ def get_awards(year):
                             award = ' - comedy or musical '.join([a.strip() for a in award.split('musical or comedy')])
 
                         awards.append(format_award(award.strip()))
-                
+
                 if comedy_match:
 
                     for match_str in comedy_match.groups():
@@ -2753,7 +2753,7 @@ def get_awards(year):
                         if ' film ' in award:
 
                             award = ' motion picture '.join([a.strip() for a in award.split(' film ')])
-                        
+
                         if 'comedy' in award and 'musical' not in award:
 
                             award = ' - comedy or musical '.join([a.strip() for a in award.split('comedy')])
@@ -2789,11 +2789,11 @@ def get_awards(year):
                         awards.append(format_award_2(str(match_str.lower())))
 
     awards_fd = nltk.FreqDist(awards)
-       
+
     return [award[0] for award in awards_fd.most_common(30) if award[0] is not None]
 
 def format_award(award):
-    
+
     award_final = award
 
     if 'movie' in award_final:
@@ -2813,21 +2813,21 @@ def format_award(award):
         award_final = ' television series '.join([a.strip() for a in award_final.split('television')])
 
     award_final = award_final.strip()
-    
+
     if award_final in ['best - drama', 'best - comedy or musical', 'best - motion picture']:
 
         award_final = None
-        
+
     return award_final
-    
+
 def format_award_2(award):
-    
+
     award_final = award
 
     if 'movie' in award_final:
 
         award_final = ' motion picture '.join([a.strip() for a in award_final.split('movie')])
-                
+
     if 'picture' in award_final and 'motion' not in award_final:
 
         award_final = ' motion picture '.join([a.strip() for a in award_final.split('picture')])
@@ -2841,18 +2841,18 @@ def format_award_2(award):
     if len(award_final) > 14 and award_final[-14:] == 'motion picture':
 
         award_final = award_final[:-14] + '- ' + award_final[-14:]
-            
+
     if award_final in ['best film', 'best - motion picture', 'best television']:
 
         award_final = None
     return award_final
-    
+
 
 def get_nominees(year):
     '''Nominees is a list of dictionaries with the hard coded award
     names as keys, and each entry a list of strings. Do NOT change
     the name of this function or what it returns.'''
-    
+
     # Your code here
 
     nominees = {}
@@ -2863,7 +2863,7 @@ def get_nominees(year):
     # two webpags for male and female name
     female_name = getNameDictionary('female') + getNameDictionary('female', '1')
     male_name = getNameDictionary('male') + getNameDictionary('male', '3') + getNameDictionary('male', '6') + ['christoph', 'hugh']
-    lastFiveYearMovie = getMovieTitles(year)+getMovieTitles(year-1)+getMovieTitles(year-2)+getMovieTitles(year-3)+getMovieTitles(year-4)
+    lastFiveYearMovie = getMovieTitles(int(year))+getMovieTitles(int(year)-1)+getMovieTitles(int(year)-2)+getMovieTitles(int(year)-3)+getMovieTitles(int(year)-4)
     lastFiveYearMovie = set(lastFiveYearMovie)
 
     general_patterns = [r'hop[(?:es?)(?:ing)](?:\sthat)?\s+(.*?)\sw[io]ns?',
@@ -3056,7 +3056,7 @@ def get_presenters(year):
     try:
         with open(path) as awards_file:
 
-            
+
             awards = pickle.load(awards_file)
 
     except IOError:
@@ -3067,17 +3067,17 @@ def get_presenters(year):
 
         presenters.append({award.name : award.presenters})
 
-    
+
     return presenters
 
 def clean(tweet, change_film=True):
 
     clean_tweet = tweet
-            
+
     if '#' in clean_tweet:
 
         clean_tweet = ''.join([a for a in clean_tweet.split('#')])
-        
+
     if 'movie' in clean_tweet:
 
         clean_tweet = 'motion picture'.join([a for a in re.split("movie", clean_tweet, flags=re.IGNORECASE)])
@@ -3108,7 +3108,7 @@ def clean(tweet, change_film=True):
 
     return clean_tweet
 
-        
+
 
 def pre_ceremony():
     '''This function loads/fetches/processes any data your program
@@ -3118,19 +3118,19 @@ def pre_ceremony():
     # Your code here
 
     print 'STARTING PRE CEREMONY\n\n'
-    
+
     years = [2013,2015]
-        
+
     for year in years:
-        
+
         print 'Reading tweets from %s...' % year
-        
+
         cased_clean_tweets_path = path = './cased_clean_tweets%s.json' % year
         raw_tweets = load_data(year)
         cased_tweets = presenters_remove_stop_words_all(raw_tweets)
-        
+
         with open(cased_clean_tweets_path, 'w') as cased_tweets_file:
-            
+
             json.dump(cased_tweets, cased_tweets_file)
 
         # Initialize all of the Awards objects using the OFFICIAL_AWARDS list
@@ -3139,10 +3139,10 @@ def pre_ceremony():
 
             print 'Initializing GG Awards for %s' % year
             with open(awards_objects_path, 'wb') as awards_file:
-                
+
                 awards_list = []
                 for award_name in OFFICIAL_AWARDS:
-    
+
                     award = Award(award_name)
                     nominees = award.get_nominees(year)
                     winners = award.get_winners(year)
@@ -3152,7 +3152,7 @@ def pre_ceremony():
                     awards_list.append(award)
 
                 pickle.dump(awards_list, awards_file)
-    
+
     print "Pre-ceremony processing complete."
     return
 
@@ -3177,7 +3177,7 @@ def main():
     get_sentiment_for_group('hosts', 2013)
     print
     return
-    
+
 
 if __name__ == '__main__':
     mp.freeze_support()
