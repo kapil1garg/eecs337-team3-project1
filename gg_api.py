@@ -120,12 +120,11 @@ def lower_case_tweet(tweet):
     lower_tweet = lower_tweet.lower()
     return lower_tweet
 
-def remove_stop_words_tweet(stop_words, tweet):
+def presenters_remove_stop_words_tweet(stop_words, tweet):
 
-    stop_words_removed_tweet = tweet
-    tweet_words = tweet['text'].split()
-    stop_words_removed_tweet['text'] = ' '.join([w for w in tweet_words if w not in stop_words])
-    return stop_words_removed_tweet['text']
+    stop_words_removed_tweet = tweet['text'].split()
+    stop_words_removed_tweet = ' '.join([str(w) for w in stop_words_removed_tweet if all(ord(c) < 128 for c in w) and str(w).lower() not in stop_words])
+    return stop_words_removed_tweet
 
 def lower_case_all(tweets):
     tweets = copy.deepcopy(tweets)
@@ -134,14 +133,12 @@ def lower_case_all(tweets):
 
 NAMES = set(lower_case_all(MALE_NAMES + FEMALE_NAMES))
 
-def remove_stop_words_all(tweets):
+def presenters_remove_stop_words_all(tweets):
     tweets = copy.deepcopy(tweets)
-    stop_words = nltk.corpus.stopwords.words('english')
-    stop_words.extend(['http', 'golden', 'globe', 'globes', 'goldenglobe', 'goldenglobes'])
-    stop_words.extend(['-', 'male', 'female', '#goldenglobes', '#gg'])
-    stop_words = set(stop_words)
-    #stop_words = set(nltk.corpus.stopwords.words('english'))
-    return [remove_stop_words_tweet(stop_words, tweet) for tweet in tweets]
+    presenter_stop_words = nltk.corpus.stopwords.words('english')
+    presenter_stop_words.extend(['http', 'golden', 'globe', 'globes', 'goldenglobe', 'goldenglobes', '-', 'male', 'female', '#goldenglobes', '#gg'])
+    presenter_stop_words = set(presenter_stop_words)
+    return [presenters_remove_stop_words_tweet(presenter_stop_words, tweet) for tweet in tweets]
 
 
 class Award(object):
@@ -174,28 +171,27 @@ class Award(object):
     def get_presenters(self, year):
 
         re_Presenters = re.compile('present|\sgave|\sgiving|\sgive|\sannounc|\sread|\sintroduc', re.IGNORECASE)
-        #re_Names = re.compile('([A-Z][a-z]+?\s[A-Z][\.-a-z]*?\s{,1}?[A-Z]?[-a-z]*?)[\s]', re.IGNORECASE)
-        re_Names = re.compile('([A-Z][a-z]+?\s[A-Z.]{,2}\s{,1}?[A-Z]?[-a-z]*?)[\s]', re.IGNORECASE)
-        #re_Names = re.compile('([A-Z][a-z]+(?=\s[A-Z])(?:\s[A-Z][a-z]+)+)', re.IGNORECASE)
+        re_Names = re.compile('([A-Z][a-z]+?\s[A-Z.]{,2}\s{,1}?[A-Z]?[-a-z]*?)[\s]')
 
         names_lower = NAMES
             
         presentersCount = {}
         if not self.presenters:
 
-            if not (os.path.isfile("./clean_tweets%s.json" % year)):
+            cased_clean_tweets_file_path = "./cased_clean_tweets%s.json" % year
+            if not (os.path.isfile(cased_clean_tweets_file_path)):
                 raise Exception('Tweets for %s have not been preprocessed' % year)
 
-            with open("./clean_tweets%s.json" % year) as clean_file:
-                tweets = json.load(clean_file)
+            with open(cased_clean_tweets_file_path) as cased_clean_file:
+                tweets = json.load(cased_clean_file)
 
             for tweet in tweets:
-                    
+                
                 clean_tweet = clean(tweet)
-                lower_clean_tweet = clean_tweet
-                lower_clean_tweet = re.sub('(\'s)',' ', lower_clean_tweet)
+                clean_tweet = re.sub('(\'s)',' ', clean_tweet)
                 if re.search(re_Presenters, clean_tweet): #[NOAH] and 'best' in tweet?
-                    
+   
+                    lower_clean_tweet = lower_case_tweet(clean_tweet) 
                     award_name = self.name
                     award_words = AWARDS_LISTS[award_name][0]
                     award_not_words = AWARDS_LISTS[award_name][1]
@@ -206,37 +202,21 @@ class Award(object):
                        and not( any([not_word in lower_clean_tweet for not_word in award_not_words]))\
                        and ((len(award_either_words) == 0) or any([either_word in lower_clean_tweet for either_word in award_either_words])):
 
-                        for name in re.findall(re_Names, lower_clean_tweet):
+                        tweet_names = re.findall(re_Names, clean_tweet)
+                        for name in tweet_names:
 
-                                
-                            name = str(name)
+                            name = name.lower()
                             name_token = word_tokenize(name)
                             dictName = name
                             if len(name_token) > 1:
-                                
                                 first_name = name_token[0]
                                 last_name = name_token[-1]
                                 
                                 if first_name in names_lower and last_name not in ' '.join(self.nominees):
                                     
-                                    if first_name not in self.name and last_name not in self.name:
+                                    if first_name not in award_name and last_name not in award_name:
                                         
                                         if dictName not in presentersCount.keys():
-                                            
-                                            #presentersStr = ' '.join(presentersCount.keys())
-                                            #if last_name in presentersStr or first_name in presentersStr:
-                                                
-                                            #    for presenter in presentersCount.keys():
-                                                    
-                                                    #if last_name in presenter.split(' ')[-1]:
-                                            #        if last_name in presenter or first_name in presenter:
-                                            #            print 'change %s to %s' % (name, presenter)
-                                            #            dictName = presenter
-                                            #            presentersCount[dictName] +=1
-                                            
-                                            #else:
-                                                
-                                            #    presentersCount[dictName] = 1
                                             
                                             presentersCount[dictName] = 1
                                             
@@ -246,7 +226,20 @@ class Award(object):
 
 
 
-            self.presenters = sorted(presentersCount.items(), key=operator.itemgetter(1), reverse=True)
+            presenters_full = sorted(presentersCount.items(), key=operator.itemgetter(1), reverse=True)
+
+            if len(presenters_full) > 1:
+                
+                if float(presenters_full[1][1]) / presenters_full[0][1] < 0.5:
+
+                    self.presenters = [str(presenters_full[0][0])]
+                else:
+                    
+                    self.presenters = [str(presenters_full[0][0]), str(presenters_full[1][0])]
+            elif len(presenters_full) == 1:
+
+                self.presenters = [str(presenters_full[0][0])]
+                
         return self.presenters
 
     def get_sentiments(self, year):
@@ -277,27 +270,32 @@ def get_awards(year):
     re_Best_Film = re.compile('(best\s[a-zA-Z\s\(-]*?film)', re.IGNORECASE)
     
 
-    if not (os.path.isfile("./clean_tweets%s.json" % year)):
-        raise Exception('Tweets for %s have not been preprocessed' % year)
+    #if not (os.path.isfile("./clean_tweets%s.json" % year)):
+    #    raise Exception('Tweets for %s have not been preprocessed' % year)
 
-    with open("./clean_tweets%s.json" % year) as clean_file:
-        tweets = json.load(clean_file)
+    #with open("./clean_tweets%s.json" % year) as clean_file:
+    #    tweets = json.load(clean_file)
+        
+    raw_tweets = load_data(year)
+    n_tweets = len(raw_tweets)
+    tweet_iterator = xrange(n_tweets)
+    processed_tweets = []
 
-    # switch words
-    # film, movie, picture -> motion picture (not for things that end with film)
-    # tv -> television
-    # television -> television series (not for things that end with television)
+    # make all tweets lower case and remove any retweets
+    for i in tweet_iterator:
+        current_word_list = re.findall(r"['a-zA-Z]+\b", raw_tweets[i]['text'].lower())
+        if 'rt' not in current_word_list:
+            processed_tweets.append(' '.join(current_word_list))
+            
+    tweets = processed_tweets
+
     
     awards = []
-    awards_2 = []
-    awards_final = []
     for u_tweet in tweets:
         
         if 'best' in u_tweet:
 
             tweet = u_tweet
-
-                    #tweet = ' '.join([a.strip() for a in tweet.split(stop_word)])
 
             drama_match = re.search(re_Best_Drama, tweet)
             musical_match = re.search(re_Best_Musical, tweet)
@@ -309,54 +307,53 @@ def get_awards(year):
 
                     for match_str in drama_match.groups():
 
-                        l_dramaMatch = str(match_str.lower())
+                        award = str(match_str.lower())
 
-                        if ' film ' in l_dramaMatch:
+                        if ' film ' in award:
 
-                            l_dramaMatch = ' motion picture '.join([a.strip() for a in l_dramaMatch.split(' film ')])
+                            award = ' motion picture '.join([a.strip() for a in award.split(' film ')])
 
-                        awards.append(' - drama'.join([a.strip() for a in l_dramaMatch.split('drama')]))
+                        awards.append(format_award(' - drama'.join([a.strip() for a in award.split('drama')])))
                             
                 if musical_match and not comedy_match:
 
                     for match_str in musical_match.groups():
 
-                        l_musMatch = str(match_str.lower())
+                        award = str(match_str.lower())
 
-                        if ' film ' in l_musMatch:
+                        if ' film ' in award:
 
-                            l_musMatch = ' motion picture '.join([a.strip() for a in l_musMatch.split(' film ')])
+                            award = ' motion picture '.join([a.strip() for a in award.split(' film ')])
 
-                        if 'musical' in l_musMatch and 'comedy' not in l_musMatch:
+                        if 'musical' in award and 'comedy' not in award:
 
-                            l_musMatch = ' - comedy or musical '.join([a.strip() for a in l_musMatch.split('musical')])
+                            award = ' - comedy or musical '.join([a.strip() for a in award.split('musical')])
 
-                        elif 'musical or comedy' in l_musMatch:
+                        elif 'musical or comedy' in award:
 
-                            l_musMatch = ' - comedy or musical '.join([a.strip() for a in l_musMatch.split('musical or comedy')])
+                            award = ' - comedy or musical '.join([a.strip() for a in award.split('musical or comedy')])
 
-                        l_musMatch = l_musMatch.strip()
-                        awards.append(l_musMatch)
+                        awards.append(format_award(award.strip()))
                 
                 if comedy_match:
 
                     for match_str in comedy_match.groups():
 
-                        l_comMatch = str(match_str.lower())
+                        award = str(match_str.lower())
 
-                        if ' film ' in l_comMatch:
+                        if ' film ' in award:
 
-                            l_comMatch = ' motion picture '.join([a.strip() for a in l_comMatch.split(' film ')])
+                            award = ' motion picture '.join([a.strip() for a in award.split(' film ')])
                         
-                        if 'comedy' in l_comMatch and 'musical' not in l_comMatch:
+                        if 'comedy' in award and 'musical' not in award:
 
-                            l_comMatch = ' - comedy or musical '.join([a.strip() for a in l_comMatch.split('comedy')])
+                            award = ' - comedy or musical '.join([a.strip() for a in award.split('comedy')])
 
-                        elif 'musical or comedy' in l_comMatch:
+                        elif 'musical or comedy' in award:
 
-                            l_comMatch = ' - comedy or musical '.join([a.strip() for a in l_comMatch.split('musical or comedy')])
+                            award = ' - comedy or musical '.join([a.strip() for a in award.split('musical or comedy')])
 
-                        awards.append(l_comMatch)
+                        awards.append(format_award(award))
 
             else:
 
@@ -368,82 +365,83 @@ def get_awards(year):
 
                     for match_str in mp_match.groups():
 
-                        l_mpMatch = str(match_str.lower())
+                        awards.append(format_award_2(str(match_str.lower())))
 
-                        awards_2.append(l_mpMatch)
-
-                if tv_match:
+                elif tv_match:
 
                     for match_str in tv_match.groups():
 
-                        l_tvMatch = str(match_str.lower())
+                        awards.append(format_award_2(str(match_str.lower())))
 
-                        awards_2.append(l_tvMatch)
-
-                if film_match:
+                elif film_match:
 
                     for match_str in film_match.groups():
 
-                        l_filmMatch = str(match_str.lower())
+                        awards.append(format_award_2(str(match_str.lower())))
 
-                        awards_2.append(l_filmMatch)
-                
-    for award in awards:
-
-        award_final = award
-
-        if 'movie' in award_final:
-
-            award_final = ' motion picture '.join([a.strip() for a in award_final.split('movie')])
-
-        if 'picture' in award_final and 'motion' not in award_final:
-
-            award_final = ' motion picture '.join([a.strip() for a in award_final.split('picture')])
-
-        if ' tv' in award_final:
-
-            award_final = ' television '.join([a.strip() for a in award_final.split('tv')])
-
-        if 'television' in award_final and 'series' not in award_final:
-
-            award_final = ' television series '.join([a.strip() for a in award_final.split('television')])
-
-        award_final = award_final.strip()
-        if award_final not in ['best - drama', 'best - comedy or musical']:
-
-            awards_final.append(award_final)
-
-    for award in awards_2:
-
-        award_final = award
-
-        if 'movie' in award_final:
-
-            award_final = ' motion picture '.join([a.strip() for a in award_final.split('movie')])
-                
-        if 'picture' in award_final and 'motion' not in award_final:
-
-            award_final = ' motion picture '.join([a.strip() for a in award_final.split('picture')])
-
-        if ' tv' in award_final:
-
-            award_final = ' television '.join([a.strip() for a in award_final.split('tv')])
-
-        award_final = award_final.strip()
-
-        if len(award_final) > 14 and award_final[-14:] == 'motion picture':
-
-            award_final = award_final[:-14] + '- ' + award_final[-14:]
-            
-        if award_final not in ['best film', 'best - motion picture', 'best television']:
-
-            awards_final.append(award_final)
-
-            
-
-    awards_fd = nltk.FreqDist(awards_final)
+    awards_fd = nltk.FreqDist(awards)
+    #total = 0
+    #for award in awards_fd:
+    #    total += award[1]
+    #print 'percentage: %s' % (float(awards_fd[29][1])/total)
        
-    return [award_fd for award_fd in awards_fd.most_common(30)]
+    return [award[0] for award in awards_fd.most_common(30) if award[0] is not None]
+
+def format_award(award):
+    
+    award_final = award
+
+    if 'movie' in award_final:
+
+        award_final = ' motion picture '.join([a.strip() for a in award_final.split('movie')])
+
+    if 'picture' in award_final and 'motion' not in award_final:
+
+        award_final = ' motion picture '.join([a.strip() for a in award_final.split('picture')])
+
+    if ' tv' in award_final:
+
+        award_final = ' television '.join([a.strip() for a in award_final.split('tv')])
+
+    if 'television' in award_final and 'series' not in award_final:
+
+        award_final = ' television series '.join([a.strip() for a in award_final.split('television')])
+
+    award_final = award_final.strip()
+    
+    if award_final in ['best - drama', 'best - comedy or musical', 'best - motion picture']:
+
+        award_final = None
+        
+    return award_final
+    
+def format_award_2(award):
+    
+    award_final = award
+
+    if 'movie' in award_final:
+
+        award_final = ' motion picture '.join([a.strip() for a in award_final.split('movie')])
+                
+    if 'picture' in award_final and 'motion' not in award_final:
+
+        award_final = ' motion picture '.join([a.strip() for a in award_final.split('picture')])
+
+    if ' tv' in award_final:
+
+        award_final = ' television '.join([a.strip() for a in award_final.split('tv')])
+
+    award_final = award_final.strip()
+
+    if len(award_final) > 14 and award_final[-14:] == 'motion picture':
+
+        award_final = award_final[:-14] + '- ' + award_final[-14:]
+            
+    if award_final in ['best film', 'best - motion picture', 'best television']:
+
+        award_final = None
+    return award_final
+    
 
 def get_nominees(year):
     '''Nominees is a list of dictionaries with the hard coded award
@@ -490,7 +488,7 @@ def get_presenters(year):
             
             awards = pickle.load(awards_file)
 
-    except NameError:
+    except IOError:
 
         print 'Cannot get presenters. Preprocessing is not complete. "%s" is not a file' % path
 
@@ -511,31 +509,31 @@ def clean(tweet, change_film=True):
         
     if 'movie' in clean_tweet:
 
-        clean_tweet = 'motion picture'.join([a for a in clean_tweet.split('movie')])
+        clean_tweet = 'motion picture'.join([a for a in re.split("movie", clean_tweet, flags=re.IGNORECASE)])
 
     if change_film and 'film' in clean_tweet:
 
-        clean_tweet = 'motion picture'.join([a for a in clean_tweet.split('film')])
+        clean_tweet = 'motion picture'.join([a for a in re.split("film", clean_tweet, flags=re.IGNORECASE)])
 
     if 'picture' in clean_tweet and 'motion' not in clean_tweet:
 
-        clean_tweet = 'motion picture'.join([a for a in clean_tweet.split('picture')])
+        clean_tweet = 'motion picture'.join([a for a in re.split("picture", clean_tweet, flags=re.IGNORECASE)])
 
     if ' tv ' in clean_tweet:
 
-        clean_tweet = ' television '.join([a.strip() for a in clean_tweet.split(' tv ')])
+        clean_tweet = ' television '.join([a.strip() for a in re.split(" tv ", clean_tweet, flags=re.IGNORECASE)])
 
     if 'comedy' in clean_tweet and 'musical' not in clean_tweet:
 
-        clean_tweet = 'comedy or musical'.join([a for a in clean_tweet.split('comedy')])
+        clean_tweet = 'comedy or musical'.join([a for a in re.split("comedy", clean_tweet, flags=re.IGNORECASE)])
 
     elif 'musical' in clean_tweet and 'comedy' not in clean_tweet:
 
-        clean_tweet = 'comedy or musical'.join([a for a in clean_tweet.split('musical')])
+        clean_tweet = 'comedy or musical'.join([a for a in re.split("musical", clean_tweet, flags=re.IGNORECASE)])
 
     elif 'musical or comedy' in clean_tweet:
 
-        clean_tweet = 'comedy or musical'.join([a for a in clean_tweet.split('musical or comedy')])
+        clean_tweet = 'comedy or musical'.join([a for a in re.split("musical or comedy", clean_tweet, flags=re.IGNORECASE)])
 
     return clean_tweet
 
@@ -556,23 +554,22 @@ def pre_ceremony():
     for year in years:
         
         print 'Reading tweets from %s...' % year
-
-        # [NOAH] 2/19 16:17 commented these out for the sake of testing
-        #tweets_filepath = './gg%s.json' % year
-        #raw_tweets = get_raw_tweets(tweets_filepath)
-        #clean_tweets = get_clean_tweets(year, tweets=raw_tweets, re_clean=False)
-        #print '%s tweets clean' % year
         
-        # [NOAH] 2/21 20:16
+        # [NOAH] 2/22 2:01
+        cased_clean_tweets_path = path = './cased_clean_tweets%s.json' % year
         raw_tweets = load_data(year)
-        lower_clean_tweets = get_clean_tweets(year, tweets=raw_tweets, re_clean=True)
+        cased_tweets = presenters_remove_stop_words_all(raw_tweets)
+        
+        with open(cased_clean_tweets_path, 'w') as cased_tweets_file:
+            
+            json.dump(cased_tweets, cased_tweets_file)
 
         # Initialize all of the Awards objects using the OFFICIAL_AWARDS list
-        awards_path = './awards_%s_pickle.txt' % year
-        if not (os.path.isfile(awards_path)) or True:
+        awards_objects_path = './awards_%s_pickle.txt' % year
+        if not (os.path.isfile(awards_objects_path)) or True:
 
             print 'Initializing GG Awards for %s' % year
-            with open(awards_path, 'wb') as awards_file:
+            with open(awards_objects_path, 'wb') as awards_file:
                 
                 awards_list = []
                 for award_name in OFFICIAL_AWARDS:
@@ -603,40 +600,11 @@ def main():
 
     awards = get_awards(2013)
     print awards
-    #nominees = get_nominees(2013)
-    #print nominees
 
     presenters = get_presenters(2013)
     print presenters
     
     return
-
-def get_clean_tweets(year, tweets=None, re_clean=False):
-
-    path = './clean_tweets%s.json' % year
-    
-    if (not (os.path.isfile(path)) or re_clean) and tweets:
-        
-        #re_retweet = re.compile('rt', re.IGNORECASE)
-        #stop_words = stopwords.words('english')
-        
-        clean_tweets = remove_stop_words_all(tweets)
-        lower_clean_tweets = lower_case_all(clean_tweets)
-        with open(path, 'w') as outfile:
-            
-            json.dump(lower_clean_tweets, outfile)
-
-    else:
-        
-        try:  
-            with open(path, 'r') as datafile:
-                lower_clean_tweets = json.load(datafile)
-                
-        except IOError:
-            
-            print '%s does not exist. Provide get_clean_tweets(year, tweets) to create new file' % path
-    
-    return lower_clean_tweets
     
 
 if __name__ == '__main__':
