@@ -128,3 +128,5 @@ sftp-config.json
 gg2013.json
 gg2015.json
 *.pdf
+awards_*_pickle.txt
+cased_clean_tweets*.json
