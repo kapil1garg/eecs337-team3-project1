@@ -100,6 +100,7 @@ AWARDS_LISTS = {'cecil b. demille award': [['cecil', 'demille', 'award'], [], []
 
 stop_words = nltk.corpus.stopwords.words('english')
 stop_words.extend(['http', 'golden', 'globe', 'globes', 'goldenglobe', 'goldenglobes'])
+stop_words.extend(['-', 'male', 'female', '#goldenglobes', '#gg'])
 stop_words = set(stop_words)
 #stop_words = ['.', ',', '!', '?', '(', '-', ' on ', ' the ', ' male ', ' female ', ' in ', ' a ', ' is ', ' for ', ' at ', 'golden ', 'globes ', 'goldenglobes', 'gg', ' by ', ' an ', ' category ', ' and ', ' show ']
                 
@@ -120,6 +121,7 @@ def lower_case_tweet(tweet):
     return lower_tweet
 
 def remove_stop_words_tweet(stop_words, tweet):
+
     stop_words_removed_tweet = tweet
     tweet_words = tweet['text'].split()
     stop_words_removed_tweet['text'] = ' '.join([w for w in tweet_words if w not in stop_words])
@@ -134,7 +136,11 @@ NAMES = set(lower_case_all(MALE_NAMES + FEMALE_NAMES))
 
 def remove_stop_words_all(tweets):
     tweets = copy.deepcopy(tweets)
-    stop_words = set(nltk.corpus.stopwords.words('english'))
+    stop_words = nltk.corpus.stopwords.words('english')
+    stop_words.extend(['http', 'golden', 'globe', 'globes', 'goldenglobe', 'goldenglobes'])
+    stop_words.extend(['-', 'male', 'female', '#goldenglobes', '#gg'])
+    stop_words = set(stop_words)
+    #stop_words = set(nltk.corpus.stopwords.words('english'))
     return [remove_stop_words_tweet(stop_words, tweet) for tweet in tweets]
 
 
@@ -170,6 +176,7 @@ class Award(object):
         re_Presenters = re.compile('present|\sgave|\sgiving|\sgive|\sannounc|\sread|\sintroduc', re.IGNORECASE)
         #re_Names = re.compile('([A-Z][a-z]+?\s[A-Z][\.-a-z]*?\s{,1}?[A-Z]?[-a-z]*?)[\s]', re.IGNORECASE)
         re_Names = re.compile('([A-Z][a-z]+?\s[A-Z.]{,2}\s{,1}?[A-Z]?[-a-z]*?)[\s]', re.IGNORECASE)
+        #re_Names = re.compile('([A-Z][a-z]+(?=\s[A-Z])(?:\s[A-Z][a-z]+)+)', re.IGNORECASE)
 
         names_lower = NAMES
             
@@ -183,8 +190,10 @@ class Award(object):
                 tweets = json.load(clean_file)
 
             for tweet in tweets:
+                    
                 clean_tweet = clean(tweet)
                 lower_clean_tweet = clean_tweet
+                lower_clean_tweet = re.sub('(\'s)',' ', lower_clean_tweet)
                 if re.search(re_Presenters, clean_tweet): #[NOAH] and 'best' in tweet?
                     
                     award_name = self.name
@@ -197,39 +206,43 @@ class Award(object):
                        and not( any([not_word in lower_clean_tweet for not_word in award_not_words]))\
                        and ((len(award_either_words) == 0) or any([either_word in lower_clean_tweet for either_word in award_either_words])):
 
-                        for name in re.findall(re_Names, clean_tweet):
+                        for name in re.findall(re_Names, lower_clean_tweet):
 
+                                
+                            name = str(name)
                             name_token = word_tokenize(name)
-                            if name_token and (name.lower() not in self.nominees) and any([token in names_lower for token in name_token]):
-
-                                dictName = str(name)
-
+                            dictName = name
+                            if len(name_token) > 1:
+                                
+                                first_name = name_token[0]
+                                last_name = name_token[-1]
+                                
+                                if first_name in names_lower and last_name not in ' '.join(self.nominees):
+                                    
+                                    if first_name not in self.name and last_name not in self.name:
                                         
-                                if dictName not in presentersCount.keys():
-
-                                    if dictName not in self.name:
-
-                                        renamed = False
-                                        #for key in presentersCount.keys():
-                                        #    if not renamed and difflib.SequenceMatcher(None, dictName, key).ratio() > 0.75:
-                                        #        print 'renaming %s to %s' % (dictName, key)
-                                        #        dictName = key
-                                        #        renamed = True
-
-                                        if renamed:
-                                            presentersCount[dictName] += 1
-                                        else:
+                                        if dictName not in presentersCount.keys():
+                                            
+                                            #presentersStr = ' '.join(presentersCount.keys())
+                                            #if last_name in presentersStr or first_name in presentersStr:
+                                                
+                                            #    for presenter in presentersCount.keys():
+                                                    
+                                                    #if last_name in presenter.split(' ')[-1]:
+                                            #        if last_name in presenter or first_name in presenter:
+                                            #            print 'change %s to %s' % (name, presenter)
+                                            #            dictName = presenter
+                                            #            presentersCount[dictName] +=1
+                                            
+                                            #else:
+                                                
+                                            #    presentersCount[dictName] = 1
                                             
                                             presentersCount[dictName] = 1
-
-                                else:
-
-                                    presentersCount[dictName] += 1
-
-                            #elif name_token and (name_token[-1] not in self.nominees) and any([name_token[-1] in key for key in presentersCount.keys()]):
-
-#                                    for key in presentersCount.keys()]):
-#                                    presentersCount[dictName] += 1
+                                            
+                                        else:
+                                            
+                                            presentersCount[dictName] += 1
 
 
 
@@ -283,11 +296,7 @@ def get_awards(year):
         if 'best' in u_tweet:
 
             tweet = u_tweet
-            for stop_word in stop_words:
 
-                if stop_word in tweet:
-
-                    print stop_word
                     #tweet = ' '.join([a.strip() for a in tweet.split(stop_word)])
 
             drama_match = re.search(re_Best_Drama, tweet)
@@ -495,7 +504,7 @@ def get_presenters(year):
 def clean(tweet, change_film=True):
 
     clean_tweet = tweet
-
+            
     if '#' in clean_tweet:
 
         clean_tweet = ''.join([a for a in clean_tweet.split('#')])
