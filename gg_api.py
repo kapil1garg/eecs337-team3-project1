@@ -2951,7 +2951,8 @@ def get_presenters(year):
     if year == 2013:
         nomineesList = NOMINEES_2013
     else:
-        nomineesList = NOMINEES_2013
+
+        nomineesList = NOMINEES_2015
 
     for award in OFFICIAL_AWARDS:
 
@@ -3064,14 +3065,13 @@ def pre_ceremony():
     will use, and stores that data in your DB or in a json, csv, or
     plain text file. It is the first thing the TA will run when grading.
     Do NOT change the name of this function or what it returns.'''
-    # Your code here
     print '\nBeginning pre-ceremony...\n'
 
-    years = [2013, 2015]
+    years = [2013,2015]
 
     for year in years:
 
-        print 'Reading tweets from %s...' % year
+        print 'Reading Golden Globes tweets from %s...' % year
 
         cased_clean_tweets_path = path = './cased_clean_tweets%s.json' % year
         raw_tweets = load_data(year)
@@ -3094,7 +3094,6 @@ def main():
     groupDict = {'a' : 'hosts', 'b': 'presenters', 'c' : 'nominees', 'd': 'winners'}
 
     while (runGG):
-
         task = raw_input("Please specify which function you would like to run:\n1: Hosts\n2: Award Names\n3: Nominees mapped to awards\n4: Presenters mapped to awards\n5: Winners mapped to awards\n6: Sentiment Analysis\nInput Number: ")
         year = raw_input("Please specify a year: ")
 
@@ -3158,7 +3157,6 @@ def main():
             if task==6:
 
                 groupC = raw_input("Please specify a group to get sentiment for:\nA: Hosts\nB: Presenters\nC: Nominees\nD: Winners\nInput Letter: ")
-
                 if all(ord(c) in range(65,69) for c in groupC) or all(ord(c) in range(97,101) for c in groupC):
                     group = groupDict[groupC]
                     print 'Getting sentiment analysis for %s Golden Globes %s...\n' % (year, group)
@@ -3171,12 +3169,6 @@ def main():
             queryAgain = raw_input("Would you like to run another query? [y/n]: ")
             if queryAgain not in ['Y', 'y', 'yes', 'YES']:
                 runGG = False
-
-    presenters = get_presenters(2013)
-    print presenters
-    #print "Host(s) for 2013: " + ' and '.join(get_hosts(2013))
-    #get_sentiment_for_group('hosts', 2013)
-    print
     return
 
 pre_ceremony()
