@@ -2984,7 +2984,7 @@ def get_presenters(year):
     if year == 2013:
         nomineesList = NOMINEES_2013
     else:
-        nomineesList = NOMINEES_2013
+        nomineesList = NOMINEES_2015
     
     for award in OFFICIAL_AWARDS:
         
