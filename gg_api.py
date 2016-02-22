@@ -2988,8 +2988,9 @@ def get_presenters(year):
     if year == 2013:
         nomineesList = NOMINEES_2013
     else:
-        nomineesList = NOMINEES_2013
 
+        nomineesList = NOMINEES_2015
+    
     for award in OFFICIAL_AWARDS:
 
 
@@ -3103,13 +3104,14 @@ def pre_ceremony():
     Do NOT change the name of this function or what it returns.'''
     # Your code here
 
-    print 'STARTING PRE CEREMONY\n'
 
-    years = [2013, 2015]
+    print '\nBeginning pre-ceremony...\n'
+    
+    years = [2013,2015]
 
     for year in years:
 
-        print 'Reading tweets from %s...' % year
+        print 'Reading Golden Globes tweets from %s...' % year
 
         cased_clean_tweets_path = path = './cased_clean_tweets%s.json' % year
         raw_tweets = load_data(year)
@@ -3131,17 +3133,89 @@ def main():
 
     # Your code here
 
-    # PRE_CEREMONY MUST BE RUN BEFORE ALL OTHER API FUNCTIONS
-    #pre_ceremony()
+    runGG = True
+    groupDict = {'a' : 'hosts', 'b': 'presenters', 'c' : 'nominees', 'd': 'winners'}
+    
+    while (runGG):
+        
+        task = raw_input("Please specify which function you would like to run:\n1: Hosts\n2: Award Names\n3: Nominees mapped to awards\n4: Presenters mapped to awards\n5: Winners mapped to awards\n6: Sentiment Analysis\nInput Number: ")
+        year = raw_input("Please specify a year: ")
+        
+        if re.match("^[1-6]$", task) is None:
+            task = 0
+        else:
+            task = int(task)
+        if re.match("^[0-9]+$", year) is None:
+            year = 0
+        else:
+            year = int(year)
+            
+        if task in range(1,7) and year in [2013, 2015]:
+            
+            if task==1:
+                
+                print "Getting host(s)...\n"
+                print "Host(s) for " + str(year) + ': ' + ' and '.join(get_hosts(year)) + '\n\n'
+              
+                
+            if task==2:
+                
+                print "Getting awards...\n"
+                awards = get_awards(year)
+                print "Awards for " + str(year) + ":\n"
+                for award in awards:
+                    print award
+                print '\n\n'
+                
+                
+            if task==3:
+                
+                print "Getting nominees...\n"
+                nominees = get_nominees(year)
+                print "Nominees for " + str(year) + ":\n"
+                for nominee in nominees:
+                    print nominee
+                print '\n\n'
+                    
+                
+                
+            if task==4:
+                
+                print "Getting presenters...\n"
+                presenters = get_presenters(year)
+                print "Presenters for " + str(year) + ":\n"
+                for presenter in presenters:
+                    print presenter
+                print '\n\n'
+                
+                
+            if task==5:
+                
+                print "Getting winners...\n"
+                winners = get_winner(year)
+                print "Winners for " + str(year) + ":\n"
+                for winner in winners:
+                    print winner
+                print '\n\n'
+                
+            if task==6:
+                
+                groupC = raw_input("Please specify a group to get sentiment for:\nA: Hosts\nB: Presenters\nC: Nominees\nD: Winners\nInput Letter: ")
+                
+                if all(ord(c) in range(65,69) for c in groupC) or all(ord(c) in range(97,101) for c in groupC):
+                    group = groupDict[groupC]
+                    print 'Getting sentiment analysis for %s Golden Globes %s...\n' % (year, group)
+                    sentiments = get_sentiment_for_group(group, year)
+                    #print "Sentiments for %s Golden Globes %s:\n" % (year, group)
+                    #for sentiment in sentiments:
+                    #    print sentiment
+                    print '\n\n'
+            
+            queryAgain = raw_input("Would you like to run another query? [y/n]: ")
+            if queryAgain not in ['Y', 'y', 'yes', 'YES']:
+                runGG = False
+                    
 
-    #awards = get_awards(2015)
-    #print awards
-
-    presenters = get_presenters(2013)
-    print presenters
-    #print "Host(s) for 2013: " + ' and '.join(get_hosts(2013))
-    #get_sentiment_for_group('hosts', 2013)
-    print
     return
 
 pre_ceremony()
