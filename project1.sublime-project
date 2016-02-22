@@ -1,13 +1,13 @@
 {
-  "folders":
-  [
-    {
-      "path": "."
+    "folders":
+    [
+        {
+            "path": "."
+        }
+    ],
+    "settings": {
+        "tab_size": 2,
+        "translate_tabs_to_spaces": true,
+        "rulers": [100]
     }
-  ],
-  "settings": {
-    "tab_size": 2,
-    "translate_tabs_to_spaces": true,
-    "rulers": [100]
-  }
 }
