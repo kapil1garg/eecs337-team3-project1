@@ -1,23 +1,21 @@
 
 from __future__ import division
-from nltk.corpus import names, stopwords
-from nltk.tokenize import *
 import os.path
 import collections
 import pickle
 import operator
 import pprint
-from lxml import html
-import requests
 import sys
 import json
 import re
 import string
 import copy
 import math
-import time
-import multiprocessing as mp
+import requests
 import nltk
+from nltk.corpus import names, stopwords
+from nltk.tokenize import *
+from lxml import html
 
 stopwords = nltk.corpus.stopwords.words('english')
 unistopwords = ['real', 'ever', 'americans', 'goldenglobes', 'acting', 'reality', 'mr', 'football', 'u', 'somehow', 'somewhat', 'anyone', 'everyone', 'musical', 'comedy', 'drama']
@@ -2425,8 +2423,10 @@ def get_nonmovie_supporting_actor(special_pattern, tweets, male_name):
     return candidates[:5]
 
 def get_hosts(year):
-    '''Hosts is a list of one or more strings. Do NOT change the name
-    of this function or what it returns.'''
+    """
+    Hosts is a list of one or more strings. Do NOT change the name
+    of this function or what it returns.
+    """
     hosts = []
 
     # get tweets
@@ -2464,7 +2464,7 @@ def get_hosts(year):
     return hosts
 
 def get_sentiment(targets, year):
-    '''
+    """
     Analyzes sentiment present in all tweets containing target string for each string.
 
     Inputs:
@@ -2474,7 +2474,7 @@ def get_sentiment(targets, year):
     Outputs:
         (dict) of raw sentiment counts
         (dict) of percentage sentiment counts rounded to 3 decimal places
-    '''
+    """
     # get tweets
     raw_tweets = load_data(year)
     n_tweets = len(raw_tweets)
@@ -2523,7 +2523,7 @@ def get_sentiment(targets, year):
     return target_sentiment, percent_target_sentiment
 
 def get_sentiment_for_group(group, year):
-    '''
+    """
     Wrapper for sentiment analyzer function.
 
     Inputs:
@@ -2534,7 +2534,7 @@ def get_sentiment_for_group(group, year):
     Outputs:
         (dict) of raw sentiment counts
         (dict) of percentage sentiment counts rounded to 3 decimal places
-    '''
+    """
     if group is 'hosts':
         target_strings = get_hosts(year)
     elif group is 'presenters':
@@ -2556,17 +2556,19 @@ def get_sentiment_for_group(group, year):
     print pct_sentiment
 
 def get_awards(year):
-    '''Awards is a list of strings. Do NOT change the name
-    of this function or what it returns.'''
+    """
+    Awards is a list of strings. Do NOT change the name
+    of this function or what it returns.
+    """
     # Your code here
 
-    re_Best_Drama = re.compile('(best\s[a-zA-z\s\(-]*?drama)', re.IGNORECASE)
-    re_Best_Musical = re.compile('(best\s[a-zA-z\s\(-]*?musical)', re.IGNORECASE)
-    re_Best_Comedy = re.compile('(best\s[a-zA-z\s\(-]*?comedy)', re.IGNORECASE)
+    re_Best_Drama = re.compile(r"(best\s[a-zA-z\s\(-]*?drama)", re.IGNORECASE)
+    re_Best_Musical = re.compile(r"(best\s[a-zA-z\s\(-]*?musical)", re.IGNORECASE)
+    re_Best_Comedy = re.compile(r"(best\s[a-zA-z\s\(-]*?comedy)", re.IGNORECASE)
 
-    re_Best_MotionPicture = re.compile('(best\s[a-zA-Z\s\(-]*?motion picture)', re.IGNORECASE)
-    re_Best_Television = re.compile('(best\s[a-zA-Z\s\(-]*?television)', re.IGNORECASE)
-    re_Best_Film = re.compile('(best\s[a-zA-Z\s\(-]*?film)', re.IGNORECASE)
+    re_Best_MotionPicture = re.compile(r"(best\s[a-zA-Z\s\(-]*?motion picture)", re.IGNORECASE)
+    re_Best_Television = re.compile(r"(best\s[a-zA-Z\s\(-]*?television)", re.IGNORECASE)
+    re_Best_Film = re.compile(r"(best\s[a-zA-Z\s\(-]*?film)", re.IGNORECASE)
 
 
     raw_tweets = load_data(year)
@@ -2585,160 +2587,97 @@ def get_awards(year):
 
     awards = []
     for u_tweet in tweets:
-
         if 'best' in u_tweet:
-
             tweet = u_tweet
-
             drama_match = re.search(re_Best_Drama, tweet)
             musical_match = re.search(re_Best_Musical, tweet)
             comedy_match = re.search(re_Best_Comedy, tweet)
 
             if drama_match or musical_match or comedy_match:
-
                 if drama_match:
-
                     for match_str in drama_match.groups():
-
                         award = str(match_str.lower())
-
                         if ' film ' in award:
-
                             award = ' motion picture '.join([a.strip() for a in award.split(' film ')])
-
                         awards.append(format_award(' - drama'.join([a.strip() for a in award.split('drama')])))
-
                 if musical_match and not comedy_match:
-
                     for match_str in musical_match.groups():
-
                         award = str(match_str.lower())
-
                         if ' film ' in award:
-
                             award = ' motion picture '.join([a.strip() for a in award.split(' film ')])
-
                         if 'musical' in award and 'comedy' not in award:
-
                             award = ' - comedy or musical '.join([a.strip() for a in award.split('musical')])
-
                         elif 'musical or comedy' in award:
-
                             award = ' - comedy or musical '.join([a.strip() for a in award.split('musical or comedy')])
-
                         awards.append(format_award(award.strip()))
-
                 if comedy_match:
-
                     for match_str in comedy_match.groups():
-
                         award = str(match_str.lower())
-
                         if ' film ' in award:
-
                             award = ' motion picture '.join([a.strip() for a in award.split(' film ')])
-
                         if 'comedy' in award and 'musical' not in award:
-
                             award = ' - comedy or musical '.join([a.strip() for a in award.split('comedy')])
-
                         elif 'musical or comedy' in award:
-
                             award = ' - comedy or musical '.join([a.strip() for a in award.split('musical or comedy')])
-
                         awards.append(format_award(award))
-
             else:
-
                 mp_match = re.search(re_Best_MotionPicture, tweet)
                 tv_match = re.search(re_Best_Television, tweet)
                 film_match = re.search(re_Best_Film, tweet)
 
                 if mp_match:
-
                     for match_str in mp_match.groups():
-
                         awards.append(format_award_2(str(match_str.lower())))
-
                 elif tv_match:
-
                     for match_str in tv_match.groups():
-
                         awards.append(format_award_2(str(match_str.lower())))
-
                 elif film_match:
-
                     for match_str in film_match.groups():
-
                         awards.append(format_award_2(str(match_str.lower())))
-
     awards_fd = nltk.FreqDist(awards)
 
     return [award[0] for award in awards_fd.most_common(30) if award[0] is not None]
 
 def format_award(award):
-
     award_final = award
 
     if 'movie' in award_final:
-
         award_final = ' motion picture '.join([a.strip() for a in award_final.split('movie')])
-
     if 'picture' in award_final and 'motion' not in award_final:
-
         award_final = ' motion picture '.join([a.strip() for a in award_final.split('picture')])
-
     if ' tv' in award_final:
-
         award_final = ' television '.join([a.strip() for a in award_final.split('tv')])
-
     if 'television' in award_final and 'series' not in award_final:
-
         award_final = ' television series '.join([a.strip() for a in award_final.split('television')])
-
     award_final = award_final.strip()
 
     if award_final in ['best - drama', 'best - comedy or musical', 'best - motion picture']:
-
         award_final = None
-
     return award_final
 
 def format_award_2(award):
-
     award_final = award
 
     if 'movie' in award_final:
-
         award_final = ' motion picture '.join([a.strip() for a in award_final.split('movie')])
-
     if 'picture' in award_final and 'motion' not in award_final:
-
         award_final = ' motion picture '.join([a.strip() for a in award_final.split('picture')])
-
     if ' tv' in award_final:
-
         award_final = ' television '.join([a.strip() for a in award_final.split('tv')])
-
     award_final = award_final.strip()
 
     if len(award_final) > 14 and award_final[-14:] == 'motion picture':
-
         award_final = award_final[:-14] + '- ' + award_final[-14:]
-
     if award_final in ['best film', 'best - motion picture', 'best television']:
-
         award_final = None
     return award_final
 
-
 def get_nominees(year):
-    '''Nominees is a list of dictionaries with the hard coded award
+    """
+    Nominees is a list of dictionaries with the hard coded award
     names as keys, and each entry a list of strings. Do NOT change
-    the name of this function or what it returns.'''
-
-    # Your code here
-
+    the name of this function or what it returns.
+    """
     nominees = {}
 
     # open all the tweets
@@ -2919,9 +2858,11 @@ def get_nominees(year):
     return nominees
 
 def get_winner(year):
-    '''Winners is a list of dictionaries with the hard coded award
+    """
+    Winners is a list of dictionaries with the hard coded award
     names as keys, and each entry a list containing a single string.
-    Do NOT change the name of this function or what it returns.'''
+    Do NOT change the name of this function or what it returns.
+    """
     # Your code here
     winners = {}
     nominees = get_nominees(year)
@@ -2930,11 +2871,11 @@ def get_winner(year):
     return winners
 
 def get_presenters(year):
-    '''Presenters is a list of dictionaries with the hard coded award
+    """
+    Presenters is a list of dictionaries with the hard coded award
     names as keys, and each entry a list of strings. Do NOT change the
-    name of this function or what it returns.'''
-    # Your code here
-
+    name of this function or what it returns.
+    """
     presentersFull = []
     names_lower = NAMES
 
@@ -2951,28 +2892,21 @@ def get_presenters(year):
     if year == 2013:
         nomineesList = NOMINEES_2013
     else:
-
         nomineesList = NOMINEES_2015
 
     for award in OFFICIAL_AWARDS:
-
-
         nominees = [' '.join(word_tokenize(nominee.lower())) for nominee in nomineesList[award]]
         presentersCount = {}
         if True:
-
             for tweet in tweets:
-
                 clean_tweet = clean(tweet)
                 clean_tweet = re.sub('(\'s)',' ', clean_tweet)
                 if re.search(re_Presenters, clean_tweet):
-
                     lower_clean_tweet = lower_case_tweet(clean_tweet)
                     award_name = award
                     award_words = AWARDS_LISTS[award_name][0]
                     award_not_words = AWARDS_LISTS[award_name][1]
                     award_either_words = AWARDS_LISTS[award_name][2]
-
 
                     if all([word in lower_clean_tweet for word in award_words])\
                        and not( any([not_word in lower_clean_tweet for not_word in award_not_words]))\
@@ -2989,88 +2923,57 @@ def get_presenters(year):
                                 last_name = name_token[-1]
 
                                 if first_name in names_lower and last_name not in ' '.join(nominees):
-
                                     if first_name not in award_name and last_name not in award_name:
-
                                         if dictName not in presentersCount.keys():
-
                                             presentersCount[dictName] = 1
-
                                         else:
-
                                             presentersCount[dictName] += 1
-
-
 
             presenters_selected = sorted(presentersCount.items(), key=operator.itemgetter(1), reverse=True)
 
             if len(presenters_selected) > 1:
-
                 if float(presenters_selected[1][1]) / presenters_selected[0][1] < 0.5:
-
                     presenters_selected = [str(presenters_selected[0][0])]
                 else:
-
                     presenters_selected = [str(presenters_selected[0][0]), str(presenters_selected[1][0])]
             elif len(presenters_selected) == 1:
-
                 presenters_selected = [str(presenters_selected[0][0])]
-
             presentersFull.append({award :  presenters_selected})
 
     return presentersFull
 
 def clean(tweet, change_film=True):
-
     clean_tweet = tweet
-
     if '#' in clean_tweet:
-
         clean_tweet = ''.join([a for a in clean_tweet.split('#')])
-
     if 'movie' in clean_tweet:
-
         clean_tweet = 'motion picture'.join([a for a in re.split("movie", clean_tweet, flags=re.IGNORECASE)])
-
     if change_film and 'film' in clean_tweet:
-
         clean_tweet = 'motion picture'.join([a for a in re.split("film", clean_tweet, flags=re.IGNORECASE)])
-
     if 'picture' in clean_tweet and 'motion' not in clean_tweet:
-
         clean_tweet = 'motion picture'.join([a for a in re.split("picture", clean_tweet, flags=re.IGNORECASE)])
-
     if ' tv ' in clean_tweet:
-
         clean_tweet = ' television '.join([a.strip() for a in re.split(" tv ", clean_tweet, flags=re.IGNORECASE)])
-
     if 'comedy' in clean_tweet and 'musical' not in clean_tweet:
-
         clean_tweet = 'comedy or musical'.join([a for a in re.split("comedy", clean_tweet, flags=re.IGNORECASE)])
-
     elif 'musical' in clean_tweet and 'comedy' not in clean_tweet:
-
         clean_tweet = 'comedy or musical'.join([a for a in re.split("musical", clean_tweet, flags=re.IGNORECASE)])
-
     elif 'musical or comedy' in clean_tweet:
-
         clean_tweet = 'comedy or musical'.join([a for a in re.split("musical or comedy", clean_tweet, flags=re.IGNORECASE)])
-
     return clean_tweet
 
-
-
 def pre_ceremony():
-    '''This function loads/fetches/processes any data your program
+    """
+    This function loads/fetches/processes any data your program
     will use, and stores that data in your DB or in a json, csv, or
     plain text file. It is the first thing the TA will run when grading.
-    Do NOT change the name of this function or what it returns.'''
+    Do NOT change the name of this function or what it returns.
+    """
     print '\nBeginning pre-ceremony...\n'
 
     years = [2013,2015]
 
     for year in years:
-
         print 'Reading Golden Globes tweets from %s...' % year
 
         cased_clean_tweets_path = path = './cased_clean_tweets%s.json' % year
@@ -3078,24 +2981,28 @@ def pre_ceremony():
         cased_tweets = presenters_remove_stop_words_all(raw_tweets)
 
         with open(cased_clean_tweets_path, 'w') as cased_tweets_file:
-
             json.dump(cased_tweets, cased_tweets_file)
-
     print "Pre-ceremony processing complete."
     return
 
+pre_ceremony()
 def main():
-    '''This function calls your program. Typing "python gg_api.py"
+    """
+    This function calls your program. Typing "python gg_api.py"
     will run this function. Or, in the interpreter, import gg_api
     and then run gg_api.main(). This is the second thing the TA will
     run when grading. Do NOT change the name of this function or
-    what it returns.'''
+    what it returns.
+    """
     runGG = True
     groupDict = {'a' : 'hosts', 'b': 'presenters', 'c' : 'nominees', 'd': 'winners'}
 
     while (runGG):
-        task = raw_input("Please specify which function you would like to run:\n1: Hosts\n2: Award Names\n3: Nominees mapped to awards\n4: Presenters mapped to awards\n5: Winners mapped to awards\n6: Sentiment Analysis\nInput Number: ")
-        year = raw_input("Please specify a year: ")
+        task = raw_input('Please specify which function you would like to run:\n' +
+            '1: Hosts\n2: Award Names\n3: Nominees mapped to awards\n' +
+            '4: Presenters mapped to awards\n5: Winners mapped to awards\n' +
+            '6: Sentiment Analysis\nInput Number: ')
+        year = raw_input('Please specify a year: ')
 
         if re.match("^[1-6]$", task) is None:
             task = 0
@@ -3107,71 +3014,55 @@ def main():
             year = int(year)
 
         if task in range(1,7) and year in [2013, 2015]:
-
             if task==1:
-
-                print "Getting host(s)...\n"
-                print "Host(s) for " + str(year) + ': ' + ' and '.join(get_hosts(year)) + '\n\n'
-
-
-            if task==2:
-
-                print "Getting awards...\n"
+                print 'Getting host(s)...\n'
+                print 'Host(s) for ' + str(year) + ': ' + ' and '.join(get_hosts(year)) + '\n\n'
+            elif task==2:
+                print 'Getting awards...\n'
                 awards = get_awards(year)
-                print "Awards for " + str(year) + ":\n"
+                print 'Awards for ' + str(year) + ':\n'
                 for award in awards:
                     print award
                 print '\n\n'
-
-
-            if task==3:
-
-                print "Getting nominees...\n"
+            elif task==3:
+                print 'Getting nominees...\n'
                 nominees = get_nominees(year)
-                print "Nominees for " + str(year) + ":\n"
+                print 'Nominees for ' + str(year) + ':\n'
                 for nominee in nominees:
                     print nominee
                 print '\n\n'
-
-
-
-            if task==4:
-
-                print "Getting presenters...\n"
+            elif task==4:
+                print 'Getting presenters...\n'
                 presenters = get_presenters(year)
-                print "Presenters for " + str(year) + ":\n"
+                print 'Presenters for ' + str(year) + ':\n'
                 for presenter in presenters:
                     print presenter
                 print '\n\n'
-
-
-            if task==5:
-
-                print "Getting winners...\n"
+            elif task==5:
+                print 'Getting winners...\n'
                 winners = get_winner(year)
-                print "Winners for " + str(year) + ":\n"
+                print 'Winners for ' + str(year) + ':\n'
                 for winner in winners:
                     print winner
                 print '\n\n'
-
-            if task==6:
-
-                groupC = raw_input("Please specify a group to get sentiment for:\nA: Hosts\nB: Presenters\nC: Nominees\nD: Winners\nInput Letter: ")
+            elif task==6:
+                groupC = raw_input('Please specify a group to get sentiment for:' +
+                    '\nA: Hosts\nB: Presenters\nC: Nominees\nD: Winners\nInput Letter: ')
                 if all(ord(c) in range(65,69) for c in groupC) or all(ord(c) in range(97,101) for c in groupC):
                     group = groupDict[groupC]
                     print 'Getting sentiment analysis for %s Golden Globes %s...\n' % (year, group)
                     sentiments = get_sentiment_for_group(group, year)
-                    #print "Sentiments for %s Golden Globes %s:\n" % (year, group)
+                    #print 'Sentiments for %s Golden Globes %s:\n' % (year, group)
                     #for sentiment in sentiments:
                     #    print sentiment
                     print '\n\n'
+            else:
+                print 'hello'
 
-            queryAgain = raw_input("Would you like to run another query? [y/n]: ")
+            queryAgain = raw_input('Would you like to run another query? [y/n]: ')
             if queryAgain not in ['Y', 'y', 'yes', 'YES']:
                 runGG = False
     return
 
-pre_ceremony()
 if __name__ == '__main__':
-    mp.freeze_support()
     main()
