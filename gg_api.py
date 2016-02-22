@@ -111,6 +111,33 @@ NOMINEES_2013 = {'cecil b. demille award': ['Jodie Foster'],
                    'best performance by an actress in a supporting role in a series, mini-series or motion picture made for television' : ['Maggie Smith', 'Hayden Panettiere', 'Archie Panjabi', 'Sarah Paulson', 'Sofia Vergara'],
                    'best performance by an actor in a supporting role in a series, mini-series or motion picture made for television' : ['Ed Harris', 'Max Greenfield', 'Danny Houston', 'Mandy Patinkin', 'Eric Stonestreet']}
 
+NOMINEES_2015 = {'cecil b. demille award': ['George Clooney'],
+                   'best motion picture - drama': ['Boyhood', 'Foxcatcher', 'The Imitation Game', 'Selma', 'The Theory of Everything'] ,
+                   'best performance by an actress in a motion picture - drama' : ['Julianne Moore', 'Jennifer Aniston', 'Felicity Jones', 'Rosamund Pike', 'Reese Witherspoon'],
+                   'best performance by an actor in a motion picture - drama' : ['Steve Carell', 'Benedict Cumberbatch', 'Jake Gyllenhaal', 'Eddie Redmayne', 'David Oyelowo'],
+                   'best motion picture - comedy or musical' : ['The Grand Budapest Hotel', 'Birdman', 'Into the Woods', 'Pride', 'St. Vincent'],
+                   'best performance by an actress in a motion picture - comedy or musical' : ['Amy Adams', 'Emily Blunt', 'Helen Mirren', 'Julianne Moore', 'Quvenzhane Wallis'],
+                   'best performance by an actor in a motion picture - comedy or musical' : ['Michael Keaton', 'Ralph Fiennes', 'Bill Murray', 'Joaquin Phoenix', 'Christopher Waltz'],
+                   'best animated feature film' : ['How to Train your dragon 2', 'big hero 6', 'the book of life', 'boxtrolls', 'Lego Movie'],
+                   'best foreign language film' : ['Leviathan', 'Force Majeure', 'Gett The Trial of Viviane Amsalem', 'Ida', 'Tangerines'],
+                   'best performance by an actress in a supporting role in a motion picture' : ['Patricia Arquette', 'Jessica Chastain', 'Keira Knightley', 'Emma Stone', 'Meryl Streep'],
+                   'best performance by an actor in a supporting role in a motion picture' : ['JK Simmons', 'Robert Duvall', 'Ethan Hawke', 'Edward Norton', 'Mark Ruffalo'],
+                   'best director - motion picture' : ['Richard Linklater', 'Wes Anderson', 'Ava DuVernay', 'David Fincher', 'Alejandro G. Inarritu'],
+                   'best screenplay - motion picture' : ['Alejandro G. Inarritu', 'Wes Anderson', 'Gillian Flynn', 'Richard Linklater', 'Graham Moore'],
+                   'best original score - motion picture' : ['Johann Johannsson', 'Alexandre Desplat', 'Trent Reznor', 'Antonio Sanchez', 'Hans Zimmer'],
+                   'best original song - motion picture' : ['Glory', 'Big Eyes', 'Mercy Is', 'Opportunity', 'Yellow Flicker Beat'],
+                   'best television series - drama' : ['The Affair', 'Downton Abbey', 'Game of Thrones', 'The Good Wife', 'House of Cards'],
+                   'best performance by an actress in a television series - drama' : ['Ruth Wilson', 'Claire Danes', 'Viola Davis', 'Julianna Margulies', 'Robin Wright'],
+                   'best performance by an actor in a television series - drama' : ['Kevin Spacey', 'Clive Owen', 'Liev Schreiber', 'James Spader', 'Dominic West'],
+                   'best television series - comedy or musical' : ['Transparent', 'Girls', 'Jane the Virgin', 'Orange Is the New Black', 'Silicon Valley'],
+                   'best performance by an actress in a television series - comedy or musical' : ['Lena Dunham', 'Gina Rodriguez', 'Edie Falco', 'Julia Lois Dreyfus', 'Taylor Schilling'],
+                   'best performance by an actor in a television series - comedy or musical' : ['Don Cheadle', 'Jeffrey Tambor', 'Lois C.K.', 'Ricky Gervais', 'William H Macy'],
+                   'best mini-series or motion picture made for television' : ['Fargo', 'The Missing', 'The Normal Heart', 'Olive Kitteridge', 'True Detective'],
+                   'best performance by an actress in a mini-series or motion picture made for television' : ['Maggie Gyllenhaal', 'Frances McDormand', 'Jessica Lange', 'Frances OConnor', 'Allison Tolman'],
+                   'best performance by an actor in a mini-series or motion picture made for television' : ['Billy Bob Thornton', 'Martin Freeman', 'Woody Harrelson', 'Matthew McConaughey', 'Mark Ruffalo'],
+                   'best performance by an actress in a supporting role in a series, mini-series or motion picture made for television' : ['Joanne Froggatt', 'Uzo Aduba', 'Kathy Bates', 'Allison Janney', 'Michelle Monaghan'],
+                   'best performance by an actor in a supporting role in a series, mini-series or motion picture made for television' : ['Matt Bomer', 'Alan Cumming', 'Colin Hanks', 'Bill Murray', 'Jon Voight']}
+
 # Dictionary used to match title of a movie
 # { AWARD_NAME : [[WORDS MUST BE IN THE TWEET], [WORDS CANT BE IN THE TWEET], [>= 1 WORD MUST BE IN TWEET]] }
 AWARDS_LISTS = {'cecil b. demille award': [['cecil', 'demille', 'award'], [], []],
@@ -177,116 +204,6 @@ def presenters_remove_stop_words_all(tweets):
     presenter_stop_words.extend(['http', 'golden', 'globe', 'globes', 'goldenglobe', 'goldenglobes', '-', 'male', 'female', '#goldenglobes', '#gg'])
     presenter_stop_words = set(presenter_stop_words)
     return [presenters_remove_stop_words_tweet(presenter_stop_words, tweet) for tweet in tweets]
-
-
-class Award(object):
-
-    def __init__(self, a_name, a_nominees=[], a_winners=[], a_presenters=[], a_sentiments=[]):
-
-        self.name = a_name
-        self.nominees = a_nominees
-        self.winners = a_winners
-        self.presenters = a_presenters
-        self.sentiments = a_sentiments
-
-    def get_nominees(self, year):
-
-        if not self.nominees:
-
-            self.nominees = [' '.join(word_tokenize(nominee.lower())) for nominee in NOMINEES_2013[self.name]]
-
-
-        return self.nominees
-
-    def get_winners(self, year):
-
-        if not self.winners:
-
-            self.winners = []
-
-        return self.winners
-
-    def get_presenters(self, year):
-
-        re_Presenters = re.compile('present|\sgave|\sgiving|\sgive|\sannounc|\sread|\sintroduc', re.IGNORECASE)
-        re_Names = re.compile('([A-Z][a-z]+?\s[A-Z.]{,2}\s{,1}?[A-Z]?[-a-z]*?)[\s]')
-
-        names_lower = NAMES
-            
-        presentersCount = {}
-        if not self.presenters:
-
-            cased_clean_tweets_file_path = "./cased_clean_tweets%s.json" % year
-            if not (os.path.isfile(cased_clean_tweets_file_path)):
-                raise Exception('Tweets for %s have not been preprocessed' % year)
-
-            with open(cased_clean_tweets_file_path) as cased_clean_file:
-                tweets = json.load(cased_clean_file)
-
-            for tweet in tweets:
-                
-                clean_tweet = clean(tweet)
-                clean_tweet = re.sub('(\'s)',' ', clean_tweet)
-                if re.search(re_Presenters, clean_tweet):
-   
-                    lower_clean_tweet = lower_case_tweet(clean_tweet) 
-                    award_name = self.name
-                    award_words = AWARDS_LISTS[award_name][0]
-                    award_not_words = AWARDS_LISTS[award_name][1]
-                    award_either_words = AWARDS_LISTS[award_name][2]
-
-                        
-                    if all([word in lower_clean_tweet for word in award_words])\
-                       and not( any([not_word in lower_clean_tweet for not_word in award_not_words]))\
-                       and ((len(award_either_words) == 0) or any([either_word in lower_clean_tweet for either_word in award_either_words])):
-
-                        tweet_names = re.findall(re_Names, clean_tweet)
-                        for name in tweet_names:
-
-                            name = name.lower()
-                            name_token = word_tokenize(name)
-                            dictName = name
-                            if len(name_token) > 1:
-                                first_name = name_token[0]
-                                last_name = name_token[-1]
-                                
-                                if first_name in names_lower and last_name not in ' '.join(self.nominees):
-                                    
-                                    if first_name not in award_name and last_name not in award_name:
-                                        
-                                        if dictName not in presentersCount.keys():
-                                            
-                                            presentersCount[dictName] = 1
-                                            
-                                        else:
-                                            
-                                            presentersCount[dictName] += 1
-
-
-
-            presenters_full = sorted(presentersCount.items(), key=operator.itemgetter(1), reverse=True)
-
-            if len(presenters_full) > 1:
-                
-                if float(presenters_full[1][1]) / presenters_full[0][1] < 0.5:
-
-                    self.presenters = [str(presenters_full[0][0])]
-                else:
-                    
-                    self.presenters = [str(presenters_full[0][0]), str(presenters_full[1][0])]
-            elif len(presenters_full) == 1:
-
-                self.presenters = [str(presenters_full[0][0])]
-                
-        return self.presenters
-
-    def get_sentiments(self, year):
-
-        if not self.sentiments:
-
-            self.sentiments = []
-
-        return self.sentiments
         
 def read_data(year):
     file_string = 'gg' + str(year) + '.json'
@@ -3051,24 +2968,89 @@ def get_presenters(year):
     name of this function or what it returns.'''
     # Your code here
 
-    path = './awards_%s_pickle.txt' % year
-    presenters = []
-    try:
-        with open(path) as awards_file:
-
-            
-            awards = pickle.load(awards_file)
-
-    except IOError:
-
-        print 'Cannot get presenters. Preprocessing is not complete. "%s" is not a file' % path
-
-    for award in awards:
-
-        presenters.append({award.name : award.presenters})
-
+    presentersFull = []
+    names_lower = NAMES
+        
+    re_Presenters = re.compile('present|\sgave|\sgiving|\sgive|\sannounc|\sread|\sintroduc', re.IGNORECASE)
+    re_Names = re.compile('([A-Z][a-z]+?\s[A-Z.]{,2}\s{,1}?[A-Z]?[-a-z]*?)[\s]')
     
-    return presenters
+    cased_clean_tweets_file_path = "./cased_clean_tweets%s.json" % year
+    if not (os.path.isfile(cased_clean_tweets_file_path)):
+        raise Exception('Tweets for %s have not been preprocessed' % year)
+
+    with open(cased_clean_tweets_file_path) as cased_clean_file:
+        tweets = json.load(cased_clean_file)
+        
+    if year == 2013:
+        nomineesList = NOMINEES_2013
+    else:
+        nomineesList = NOMINEES_2013
+    
+    for award in OFFICIAL_AWARDS:
+        
+        
+        nominees = [' '.join(word_tokenize(nominee.lower())) for nominee in nomineesList[award]]
+        presentersCount = {}
+        if True:
+
+            for tweet in tweets:
+                
+                clean_tweet = clean(tweet)
+                clean_tweet = re.sub('(\'s)',' ', clean_tweet)
+                if re.search(re_Presenters, clean_tweet):
+   
+                    lower_clean_tweet = lower_case_tweet(clean_tweet) 
+                    award_name = award
+                    award_words = AWARDS_LISTS[award_name][0]
+                    award_not_words = AWARDS_LISTS[award_name][1]
+                    award_either_words = AWARDS_LISTS[award_name][2]
+
+                        
+                    if all([word in lower_clean_tweet for word in award_words])\
+                       and not( any([not_word in lower_clean_tweet for not_word in award_not_words]))\
+                       and ((len(award_either_words) == 0) or any([either_word in lower_clean_tweet for either_word in award_either_words])):
+
+                        tweet_names = re.findall(re_Names, clean_tweet)
+                        for name in tweet_names:
+
+                            name = name.lower()
+                            name_token = word_tokenize(name)
+                            dictName = name
+                            if len(name_token) > 1:
+                                first_name = name_token[0]
+                                last_name = name_token[-1]
+                                
+                                if first_name in names_lower and last_name not in ' '.join(nominees):
+                                    
+                                    if first_name not in award_name and last_name not in award_name:
+                                        
+                                        if dictName not in presentersCount.keys():
+                                            
+                                            presentersCount[dictName] = 1
+                                            
+                                        else:
+                                            
+                                            presentersCount[dictName] += 1
+
+
+
+            presenters_selected = sorted(presentersCount.items(), key=operator.itemgetter(1), reverse=True)
+
+            if len(presenters_selected) > 1:
+                
+                if float(presenters_selected[1][1]) / presenters_selected[0][1] < 0.5:
+
+                    presenters_selected = [str(presenters_selected[0][0])]
+                else:
+                    
+                    presenters_selected = [str(presenters_selected[0][0]), str(presenters_selected[1][0])]
+            elif len(presenters_selected) == 1:
+
+                presenters_selected = [str(presenters_selected[0][0])]
+            
+            presentersFull.append({award :  presenters_selected})
+            
+    return presentersFull
 
 def clean(tweet, change_film=True):
 
@@ -3117,9 +3099,9 @@ def pre_ceremony():
     Do NOT change the name of this function or what it returns.'''
     # Your code here
 
-    print 'STARTING PRE CEREMONY\n\n'
+    print 'STARTING PRE CEREMONY\n'
     
-    years = [2013,2015]
+    years = [2013, 2015]
         
     for year in years:
         
@@ -3132,26 +3114,6 @@ def pre_ceremony():
         with open(cased_clean_tweets_path, 'w') as cased_tweets_file:
             
             json.dump(cased_tweets, cased_tweets_file)
-
-        # Initialize all of the Awards objects using the OFFICIAL_AWARDS list
-        awards_objects_path = './awards_%s_pickle.txt' % year
-        if not (os.path.isfile(awards_objects_path)) or True:
-
-            print 'Initializing GG Awards for %s' % year
-            with open(awards_objects_path, 'wb') as awards_file:
-                
-                awards_list = []
-                for award_name in OFFICIAL_AWARDS:
-    
-                    award = Award(award_name)
-                    nominees = award.get_nominees(year)
-                    winners = award.get_winners(year)
-                    presenters = award.get_presenters(year)
-                    sentiments = award.get_sentiments(year)
-                    award = Award(award_name, nominees, winners, presenters, sentiments)
-                    awards_list.append(award)
-
-                pickle.dump(awards_list, awards_file)
     
     print "Pre-ceremony processing complete."
     return
@@ -3166,15 +3128,15 @@ def main():
     # Your code here
 
     # PRE_CEREMONY MUST BE RUN BEFORE ALL OTHER API FUNCTIONS
-    #pre_ceremony()
+    pre_ceremony()
 
     #awards = get_awards(2015)
     #print awards
 
-    #presenters = get_presenters(2015)
-    #print presenters
-    print "Host(s) for 2013: " + ' and '.join(get_hosts(2013))
-    get_sentiment_for_group('hosts', 2013)
+    presenters = get_presenters(2015)
+    print presenters
+    #print "Host(s) for 2013: " + ' and '.join(get_hosts(2013))
+    #get_sentiment_for_group('hosts', 2013)
     print
     return
     
