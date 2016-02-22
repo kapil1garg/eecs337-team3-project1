@@ -5,6 +5,7 @@ import json
 import re
 import string
 import copy
+import math
 import time
 import multiprocessing as mp
 import nltk
@@ -50,7 +51,7 @@ def remove_stop_words_mp(tweets):
 
 OFFICIAL_AWARDS = ['cecil b. demille award', 'best motion picture - drama', 'best performance by an actress in a motion picture - drama', 'best performance by an actor in a motion picture - drama', 'best motion picture - comedy or musical', 'best performance by an actress in a motion picture - comedy or musical', 'best performance by an actor in a motion picture - comedy or musical', 'best animated feature film', 'best foreign language film', 'best performance by an actress in a supporting role in a motion picture', 'best performance by an actor in a supporting role in a motion picture', 'best director - motion picture', 'best screenplay - motion picture', 'best original score - motion picture', 'best original song - motion picture', 'best television series - drama', 'best performance by an actress in a television series - drama', 'best performance by an actor in a television series - drama', 'best television series - comedy or musical', 'best performance by an actress in a television series - comedy or musical', 'best performance by an actor in a television series - comedy or musical', 'best mini-series or motion picture made for television', 'best performance by an actress in a mini-series or motion picture made for television', 'best performance by an actor in a mini-series or motion picture made for television', 'best performance by an actress in a supporting role in a series, mini-series or motion picture made for television', 'best performance by an actor in a supporting role in a series, mini-series or motion picture made for television']
 
-SENTIMENT_WORDS = {
+SENTIMENT_DICT = {
     'abandon': 'negative', 'abandoned': 'negative', 'abandonment': 'negative', 'abase': 'negative',
     'abasement': 'negative', 'abash': 'negative', 'abate': 'negative', 'abdicate': 'negative',
     'aberration': 'negative', 'abhor': 'negative', 'abhorred': 'negative', 'abhorrence':
@@ -1913,6 +1914,8 @@ SENTIMENT_WORDS = {
     'zest': 'positive'
 }
 
+SENTIMENT_SET = set(SENTIMENT_DICT.keys())
+
 def get_hosts(year):
     '''Hosts is a list of one or more strings. Do NOT change the name
     of this function or what it returns.'''
@@ -1952,8 +1955,93 @@ def get_hosts(year):
         hosts = [top_50_bigrams[0][0][0] + ' ' + top_50_bigrams[0][0][1]]
     return hosts
 
-def host_sentiment(year):
-    pass
+def get_sentiment(targets, year):
+    '''
+    Analyzes sentiment present in all tweets containing target string for each string.
+
+    Inputs:
+        targets (list of string): strings to use for selecting tweets for sentiment analysis
+        year (int): year to run analysis on
+
+    Outputs:
+        (dict) of raw sentiment counts
+        (dict) of percentage sentiment counts rounded to 3 decimal places
+    '''
+    # get tweets
+    raw_tweets = load_data(year)
+    n_tweets = len(raw_tweets)
+    tweet_iterator = xrange(n_tweets)
+    processed_tweets = []
+
+    # make all tweets lower case and remove any retweets
+    for i in tweet_iterator:
+        current_word_list = re.findall(r"['a-zA-Z]+\b", raw_tweets[i]['text'].lower())
+        if 'rt' not in current_word_list:
+            processed_tweets.append(' '.join(current_word_list))
+
+    # obtain sentiment for each target with recognized sentiment words
+    target_sentiment = {}
+    for target in targets:
+        target_string = str(target)
+        target_sentiment[target_string] = {'positive': 0, 'negative': 0, 'neutral': 0, 'both': 0}
+
+        # see if target string is found in tweet, if so add to sentiment
+        current_target = re.compile(target)
+        for tweet in processed_tweets:
+            if current_target.search(tweet) is not None:
+                tweet_words = re.findall(r"['a-zA-Z]+\b", tweet)
+                for word in tweet_words:
+                    if word in SENTIMENT_SET:
+                        sentiment_count = target_sentiment[target_string][SENTIMENT_DICT[word]]
+                        target_sentiment[target_string][SENTIMENT_DICT[word]] = sentiment_count + 1
+
+    # percentify everything
+    percent_target_sentiment = {}
+    for target in target_sentiment:
+        positive = target_sentiment[target]['positive']
+        negative = target_sentiment[target]['negative']
+        neutral = target_sentiment[target]['neutral']
+        both = target_sentiment[target]['both']
+        total = positive + negative + neutral + both + math.exp(-10) # to avoid divide by 0
+
+        # create percentages
+        rounding_place = 3
+        percent_target_sentiment[str(target)] = {
+            'positive': str(round(100 * positive / total, rounding_place)) + "%",
+            'negative': str(round(100 * negative / total, rounding_place)) + "%",
+            'neutral': str(round(100 * neutral / total, rounding_place)) + "%",
+            'both': str(round(100 * both / total, rounding_place)) + "%"
+        }
+    return target_sentiment, percent_target_sentiment
+
+def get_sentiment_for_group(group, year):
+    '''
+    Wrapper for sentiment analyzer function.
+
+    Inputs:
+        groups (string): group of people to run through analyzer
+                        (either hosts, presenters, nominees, or winners)
+        year (int): year to run analysis on
+
+    Outputs:
+        (dict) of raw sentiment counts
+        (dict) of percentage sentiment counts rounded to 3 decimal places
+    '''
+    if group is 'hosts':
+        target_strings = get_hosts(year)
+    elif group is 'presenters':
+        target_strings = get_presenters(year)
+    elif group is 'nominees':
+        target_strings = get_nominees(year)
+    elif group is 'winners':
+        target_strings = get_winner(year)
+    else:
+        return
+
+    # run sentiment analysis for target strings
+    print 'Running sentiment analysis for ' + ', '.join(target_strings)
+    raw_sentiment, pct_sentiment = get_sentiment(target_strings, year)
+    print pct_sentiment
 
 def get_awards(year):
     '''Awards is a list of strings. Do NOT change the name
@@ -1998,9 +2086,13 @@ def main():
     run when grading. Do NOT change the name of this function or
     what it returns.'''
 
-    # get hosts
+    # get hosts and corresponding sentiment
     print "Host(s) for 2013: " + ' and '.join(get_hosts(2013))
+    get_sentiment_for_group('hosts', 2013)
+    print
+
     print "Host(s) for 2015: " + ' and '.join(get_hosts(2015))
+    get_sentiment_for_group('hosts', 2015)
 
 if __name__ == '__main__':
     mp.freeze_support()
