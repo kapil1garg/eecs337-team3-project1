@@ -2577,13 +2577,17 @@ def get_sentiment_for_group(group, year):
     elif group is 'presenters':
         target_strings = get_presenters(year)
     elif group is 'nominees':
-        target_strings = get_nominees(year)
+        award_nominee_dict = get_nominees(year)
+        target_strings = []
+        for award in award_nominee_dict:
+            target_strings.extend(award_nominee_dict[award])
     elif group is 'winners':
         target_strings = get_winner(year)
     else:
         return
 
     # run sentiment analysis for target strings
+    print target_strings
     print 'Running sentiment analysis for ' + ', '.join(target_strings)
     raw_sentiment, pct_sentiment = get_sentiment(target_strings, year)
     print pct_sentiment
@@ -2970,42 +2974,42 @@ def get_presenters(year):
 
     presentersFull = []
     names_lower = NAMES
-        
+
     re_Presenters = re.compile('present|\sgave|\sgiving|\sgive|\sannounc|\sread|\sintroduc', re.IGNORECASE)
     re_Names = re.compile('([A-Z][a-z]+?\s[A-Z.]{,2}\s{,1}?[A-Z]?[-a-z]*?)[\s]')
-    
+
     cased_clean_tweets_file_path = "./cased_clean_tweets%s.json" % year
     if not (os.path.isfile(cased_clean_tweets_file_path)):
         raise Exception('Tweets for %s have not been preprocessed' % year)
 
     with open(cased_clean_tweets_file_path) as cased_clean_file:
         tweets = json.load(cased_clean_file)
-        
+
     if year == 2013:
         nomineesList = NOMINEES_2013
     else:
         nomineesList = NOMINEES_2013
-    
+
     for award in OFFICIAL_AWARDS:
-        
-        
+
+
         nominees = [' '.join(word_tokenize(nominee.lower())) for nominee in nomineesList[award]]
         presentersCount = {}
         if True:
 
             for tweet in tweets:
-                
+
                 clean_tweet = clean(tweet)
                 clean_tweet = re.sub('(\'s)',' ', clean_tweet)
                 if re.search(re_Presenters, clean_tweet):
-   
-                    lower_clean_tweet = lower_case_tweet(clean_tweet) 
+
+                    lower_clean_tweet = lower_case_tweet(clean_tweet)
                     award_name = award
                     award_words = AWARDS_LISTS[award_name][0]
                     award_not_words = AWARDS_LISTS[award_name][1]
                     award_either_words = AWARDS_LISTS[award_name][2]
 
-                        
+
                     if all([word in lower_clean_tweet for word in award_words])\
                        and not( any([not_word in lower_clean_tweet for not_word in award_not_words]))\
                        and ((len(award_either_words) == 0) or any([either_word in lower_clean_tweet for either_word in award_either_words])):
@@ -3019,37 +3023,37 @@ def get_presenters(year):
                             if len(name_token) > 1:
                                 first_name = name_token[0]
                                 last_name = name_token[-1]
-                                
+
                                 if first_name in names_lower and last_name not in ' '.join(nominees):
-                                    
+
                                     if first_name not in award_name and last_name not in award_name:
-                                        
+
                                         if dictName not in presentersCount.keys():
-                                            
+
                                             presentersCount[dictName] = 1
-                                            
+
                                         else:
-                                            
+
                                             presentersCount[dictName] += 1
 
 
 
             presenters_selected = sorted(presentersCount.items(), key=operator.itemgetter(1), reverse=True)
-            
+
             if len(presenters_selected) > 1:
-                
+
                 if float(presenters_selected[1][1]) / presenters_selected[0][1] < 0.5:
 
                     presenters_selected = [str(presenters_selected[0][0])]
                 else:
-                    
+
                     presenters_selected = [str(presenters_selected[0][0]), str(presenters_selected[1][0])]
             elif len(presenters_selected) == 1:
 
                 presenters_selected = [str(presenters_selected[0][0])]
-            
+
             presentersFull.append({award :  presenters_selected})
-            
+
     return presentersFull
 
 def clean(tweet, change_film=True):
@@ -3100,7 +3104,7 @@ def pre_ceremony():
     # Your code here
 
     print 'STARTING PRE CEREMONY\n'
-    
+
     years = [2013, 2015]
 
     for year in years:
