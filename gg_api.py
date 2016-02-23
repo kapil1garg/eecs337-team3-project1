@@ -2647,7 +2647,7 @@ def get_nominees(year):
     # award index 0 -- only one winner and candidate
     special_pattern = [r'[,!?.] \w+ \w+ and (\w+ \w+)[.?!]']
     special_pattern = special_pattern+general_patterns
-    nominees[OFFICIAL_AWARDS[0]] = get_demille(special_pattern, tweets, female_name, male_name)
+    nominees[OFFICIAL_AWARDS[0]] = [get_demille(special_pattern, tweets, female_name, male_name)]
     print nominees[OFFICIAL_AWARDS[0]]
 
     # award index 1
