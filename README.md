@@ -3,7 +3,7 @@ Team 3's Project 1 code for Northwestern's EECS 337: Natural Language Processin
 
 Team members: Kapil Garg, Noah Wolfenzon, Yifeng Zhang
 
-In the file gg_api.py, we implement several functions to get the information related to golden globes which include: hosts, award names, nominees, winners, presenters and setiments. Brief Descripition are given in the follows about there functions:
+In the file gg_api.py, we implement several functions to get the information related to golden globes which include: hosts, award names, nominees, winners, presenters and setiments. Brief descripition are given in the follows about there functions:
 get_hosts: 
 // kapil
 
@@ -38,7 +38,7 @@ Besides, when seeking for the nominees, we constructed a male namelist, female l
 
 // other citations if exists
 
-Finally, in the main look. we builds are simple text user interface by infinite loops.
+Finally, in the main function, we build a simple text user interface by infinite loops.
 
 
 
