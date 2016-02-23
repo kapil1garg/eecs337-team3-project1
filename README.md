@@ -39,21 +39,21 @@ Besides, when seeking for the nominees, we constructed a male namelist, female l
 // other citations if exists
 Python Libraries Imported:
 
-from __future__ import division
-import os.path
-import collections
-import operator
-import pprint
-import sys
-import json
-import re
-import string
-import copy
-import math
-import requests
-import nltk
-from nltk.corpus import names, stopwords
-from nltk.tokenize import *
+from __future__ import division, 
+import os.path, 
+import collections, 
+import operator, 
+import pprint, 
+import sys, 
+import json, 
+import re, 
+import string, 
+import copy, 
+import math, 
+import requests, 
+import nltk, 
+from nltk.corpus import names, stopwords, 
+from nltk.tokenize import *, 
 from lxml import html
 
 Finally, in the main function, we build a simple text user interface by infinite loops.
