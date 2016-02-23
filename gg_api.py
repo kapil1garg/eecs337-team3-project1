@@ -84,59 +84,6 @@ OFFICIAL_AWARDS = ['cecil b. demille award',
                    'best performance by an actress in a supporting role in a series, mini-series or motion picture made for television',
                    'best performance by an actor in a supporting role in a series, mini-series or motion picture made for television']
 
-NOMINEES_2013 = {'cecil b. demille award': ['Jodie Foster'],
-                   'best motion picture - drama': ['Argo', 'Django Unchained', 'Life of Pi', 'Lincoln', 'Zero Dark Thirty'] ,
-                   'best performance by an actress in a motion picture - drama' : ['Jessica Chastain', 'Marion Cotillard', 'Helen Mirren', 'Naomi Watts', 'Rachel Weisz'],
-                   'best performance by an actor in a motion picture - drama' : ['Daniel Day-Lewis', 'Richard Gere', 'John Hawkes', 'Joaquin Phoenix', 'Denzel Washington'],
-                   'best motion picture - comedy or musical' : ['Les Miserables', 'The Best Exotic Marigold Hotel', 'Moonrise Kingdom', 'Salmon Fishing in the Yemen', 'Silver Linings Playbook'],
-                   'best performance by an actress in a motion picture - comedy or musical' : ['Jennifer Lawrence', 'Emily Blunt', 'Judi Dench', 'Maggie Smith', 'Meryl Streep'],
-                   'best performance by an actor in a motion picture - comedy or musical' : ['Hugh Jackman', 'Jack Black', 'Bradley Cooper', 'Ewan McGregor', 'Bill Murray'],
-                   'best animated feature film' : ['Brave', 'Frankenweenie', 'Hotel Transylvania', 'Rise of the Guardians', 'Wreck-It Ralph'],
-                   'best foreign language film' : ['Amour', 'A Royal Affair', 'The Intouchables', 'Kon-Tiki', 'Rust and Bone'],
-                   'best performance by an actress in a supporting role in a motion picture' : ['Anne Hathaway', 'Amy Adams', 'Sally Field', 'Helen Hunt', 'Nicole Kidman'],
-                   'best performance by an actor in a supporting role in a motion picture' : ['Christopher Waltz', 'Alan Arkin', 'Leonardo DiCaprio', 'Phillip Seymour Hoffman', 'Tommy Lee Jones'],
-                   'best director - motion picture' : ['Ben Affleck', 'Kathryn Bigelow', 'Ang Lee', 'Steven Spielberg', 'Quentin Tarantino'],
-                   'best screenplay - motion picture' : ['Quentin Tarantino', 'Tony Kushner', 'David O Russel', 'Mark Boal'],
-                   'best original score - motion picture' : ['Mychael Danna', 'Dario Marianelli', 'Alexandre Desplat', 'John Williams', 'Tom Tykwer', 'Johnny Klimek', 'Reinhold Heil'],
-                   'best original song - motion picture' : ['Skyfall', 'For You', 'Not Running Anymore', 'Safe & Sound', 'Suddenly'],
-                   'best television series - drama' : ['Homeland', 'Breaking Bad', 'Boardwalk Empire', 'Downton Abbey', 'The Newsroom'],
-                   'best performance by an actress in a television series - drama' : ['Claire Danes', 'Connie Britton', 'Glenn Close', 'Michelle Dockery', 'Julianna Margulies'],
-                   'best performance by an actor in a television series - drama' : ['Damian Lewis', 'Steve Buscemi', 'Bryan Cranston', 'Jeff Daniels', 'Jon Hamm'],
-                   'best television series - comedy or musical' : ['Girls', 'The Big Bang Theory', 'Episodes', 'Modern Family', 'Smash'],
-                   'best performance by an actress in a television series - comedy or musical' : ['Lena Dunham', 'Zooey Deschanel', 'Tina Fey', 'Julia Lois Dreyfus', 'Amy Poehler'],
-                   'best performance by an actor in a television series - comedy or musical' : ['Don Cheadle', 'Alec Baldwin', 'Lois C.K.', 'Matt LeBlanc', 'Jim Parsons'],
-                   'best mini-series or motion picture made for television' : ['Game Change', 'The Girl', 'The Hour', 'Hatfields & McCoys', 'Political Animals'],
-                   'best performance by an actress in a mini-series or motion picture made for television' : ['Julianne Moore', 'Nicole Kidman', 'Jessica Lange', 'Sienna Miller', 'Sigourney Weaver'],
-                   'best performance by an actor in a mini-series or motion picture made for television' : ['Kevin Costner', 'Benedict Cumberbatch', 'Woody Harrelson', 'Toby Jones', 'Clive Owen'],
-                   'best performance by an actress in a supporting role in a series, mini-series or motion picture made for television' : ['Maggie Smith', 'Hayden Panettiere', 'Archie Panjabi', 'Sarah Paulson', 'Sofia Vergara'],
-                   'best performance by an actor in a supporting role in a series, mini-series or motion picture made for television' : ['Ed Harris', 'Max Greenfield', 'Danny Houston', 'Mandy Patinkin', 'Eric Stonestreet']}
-
-NOMINEES_2015 = {'cecil b. demille award': ['George Clooney'],
-                   'best motion picture - drama': ['Boyhood', 'Foxcatcher', 'The Imitation Game', 'Selma', 'The Theory of Everything'] ,
-                   'best performance by an actress in a motion picture - drama' : ['Julianne Moore', 'Jennifer Aniston', 'Felicity Jones', 'Rosamund Pike', 'Reese Witherspoon'],
-                   'best performance by an actor in a motion picture - drama' : ['Steve Carell', 'Benedict Cumberbatch', 'Jake Gyllenhaal', 'Eddie Redmayne', 'David Oyelowo'],
-                   'best motion picture - comedy or musical' : ['The Grand Budapest Hotel', 'Birdman', 'Into the Woods', 'Pride', 'St. Vincent'],
-                   'best performance by an actress in a motion picture - comedy or musical' : ['Amy Adams', 'Emily Blunt', 'Helen Mirren', 'Julianne Moore', 'Quvenzhane Wallis'],
-                   'best performance by an actor in a motion picture - comedy or musical' : ['Michael Keaton', 'Ralph Fiennes', 'Bill Murray', 'Joaquin Phoenix', 'Christopher Waltz'],
-                   'best animated feature film' : ['How to Train your dragon 2', 'big hero 6', 'the book of life', 'boxtrolls', 'Lego Movie'],
-                   'best foreign language film' : ['Leviathan', 'Force Majeure', 'Gett The Trial of Viviane Amsalem', 'Ida', 'Tangerines'],
-                   'best performance by an actress in a supporting role in a motion picture' : ['Patricia Arquette', 'Jessica Chastain', 'Keira Knightley', 'Emma Stone', 'Meryl Streep'],
-                   'best performance by an actor in a supporting role in a motion picture' : ['JK Simmons', 'Robert Duvall', 'Ethan Hawke', 'Edward Norton', 'Mark Ruffalo'],
-                   'best director - motion picture' : ['Richard Linklater', 'Wes Anderson', 'Ava DuVernay', 'David Fincher', 'Alejandro G. Inarritu'],
-                   'best screenplay - motion picture' : ['Alejandro G. Inarritu', 'Wes Anderson', 'Gillian Flynn', 'Richard Linklater', 'Graham Moore'],
-                   'best original score - motion picture' : ['Johann Johannsson', 'Alexandre Desplat', 'Trent Reznor', 'Antonio Sanchez', 'Hans Zimmer'],
-                   'best original song - motion picture' : ['Glory', 'Big Eyes', 'Mercy Is', 'Opportunity', 'Yellow Flicker Beat'],
-                   'best television series - drama' : ['The Affair', 'Downton Abbey', 'Game of Thrones', 'The Good Wife', 'House of Cards'],
-                   'best performance by an actress in a television series - drama' : ['Ruth Wilson', 'Claire Danes', 'Viola Davis', 'Julianna Margulies', 'Robin Wright'],
-                   'best performance by an actor in a television series - drama' : ['Kevin Spacey', 'Clive Owen', 'Liev Schreiber', 'James Spader', 'Dominic West'],
-                   'best television series - comedy or musical' : ['Transparent', 'Girls', 'Jane the Virgin', 'Orange Is the New Black', 'Silicon Valley'],
-                   'best performance by an actress in a television series - comedy or musical' : ['Lena Dunham', 'Gina Rodriguez', 'Edie Falco', 'Julia Lois Dreyfus', 'Taylor Schilling'],
-                   'best performance by an actor in a television series - comedy or musical' : ['Don Cheadle', 'Jeffrey Tambor', 'Lois C.K.', 'Ricky Gervais', 'William H Macy'],
-                   'best mini-series or motion picture made for television' : ['Fargo', 'The Missing', 'The Normal Heart', 'Olive Kitteridge', 'True Detective'],
-                   'best performance by an actress in a mini-series or motion picture made for television' : ['Maggie Gyllenhaal', 'Frances McDormand', 'Jessica Lange', 'Frances OConnor', 'Allison Tolman'],
-                   'best performance by an actor in a mini-series or motion picture made for television' : ['Billy Bob Thornton', 'Martin Freeman', 'Woody Harrelson', 'Matthew McConaughey', 'Mark Ruffalo'],
-                   'best performance by an actress in a supporting role in a series, mini-series or motion picture made for television' : ['Joanne Froggatt', 'Uzo Aduba', 'Kathy Bates', 'Allison Janney', 'Michelle Monaghan'],
-                   'best performance by an actor in a supporting role in a series, mini-series or motion picture made for television' : ['Matt Bomer', 'Alan Cumming', 'Colin Hanks', 'Bill Murray', 'Jon Voight']}
 
 # Dictionary used to match title of a movie
 # { AWARD_NAME : [[WORDS MUST BE IN THE TWEET], [WORDS CANT BE IN THE TWEET], [>= 1 WORD MUST BE IN TWEET]] }
@@ -170,6 +117,9 @@ AWARDS_LISTS = {'cecil b. demille award': [['cecil', 'demille', 'award'], [], []
 
 MALE_NAMES = nltk.corpus.names.words('male.txt')
 FEMALE_NAMES = nltk.corpus.names.words('female.txt')
+
+NOMINEES_2013 = None
+NOMINEES_2015 = None
 
 
 def load_data(year):
@@ -2953,6 +2903,12 @@ def get_nominees(year):
     nominees[OFFICIAL_AWARDS[25]] = get_nonmovie_supporting_actor(special_pattern, tweets, male_name)
     print nominees[OFFICIAL_AWARDS[25]]
 
+
+    if year == 2013:
+        NOMINEES_2013 = nominees
+    else:
+        NOMINEES_2015 = nominees
+    
     return nominees
 
 def get_winner(year):
@@ -2974,86 +2930,102 @@ def get_presenters(year):
 
     presentersFull = []
     names_lower = NAMES
+    
 
     re_Presenters = re.compile('present|\sgave|\sgiving|\sgive|\sannounc|\sread|\sintroduc', re.IGNORECASE)
     re_Names = re.compile('([A-Z][a-z]+?\s[A-Z.]{,2}\s{,1}?[A-Z]?[-a-z]*?)[\s]')
 
-    cased_clean_tweets_file_path = "./cased_clean_tweets%s.json" % year
-    if not (os.path.isfile(cased_clean_tweets_file_path)):
-        raise Exception('Tweets for %s have not been preprocessed' % year)
-
-    with open(cased_clean_tweets_file_path) as cased_clean_file:
-        tweets = json.load(cased_clean_file)
+    cased_clean_tweets_path = path = './cased_clean_tweets%s.json' % year
+    
+    if os.path.isfile(cased_clean_tweets_path):
+        
+        with open(cased_clean_tweets_path, 'r') as cased_tweets_file:
+            
+            tweets = json.load(cased_tweets_file)
+    else:
+        raw_tweets = load_data(year)
+        cased_tweets = presenters_remove_stop_words_all(raw_tweets)
+        tweets = cased_tweets
+        
+        with open(cased_clean_tweets_path, 'w') as cased_tweets_file:
+            
+            json.dump(cased_tweets, cased_tweets_file)
 
     if year == 2013:
-        nomineesList = NOMINEES_2013
+        
+        if NOMINEES_2013 is not None:
+            nomineesList = NOMINEES_2013
+        else:
+            nomineesList = get_nominees(year)
     else:
-
-        nomineesList = NOMINEES_2015
+        
+        if NOMINEES_2015 is not None:
+            nomineesList = NOMINEES_2015
+        else:
+            nomineesList = get_nominess(year)
     
     for award in OFFICIAL_AWARDS:
 
 
         nominees = [' '.join(word_tokenize(nominee.lower())) for nominee in nomineesList[award]]
         presentersCount = {}
-        if True:
 
-            for tweet in tweets:
+        for tweet in tweets:
 
-                clean_tweet = clean(tweet)
-                clean_tweet = re.sub('(\'s)',' ', clean_tweet)
-                if re.search(re_Presenters, clean_tweet):
+            clean_tweet = clean(tweet)
+            clean_tweet = re.sub('(\'s)',' ', clean_tweet)
+            if re.search(re_Presenters, clean_tweet):
 
-                    lower_clean_tweet = lower_case_tweet(clean_tweet)
-                    award_name = award
-                    award_words = AWARDS_LISTS[award_name][0]
-                    award_not_words = AWARDS_LISTS[award_name][1]
-                    award_either_words = AWARDS_LISTS[award_name][2]
-
-
-                    if all([word in lower_clean_tweet for word in award_words])\
-                       and not( any([not_word in lower_clean_tweet for not_word in award_not_words]))\
-                       and ((len(award_either_words) == 0) or any([either_word in lower_clean_tweet for either_word in award_either_words])):
-
-                        tweet_names = re.findall(re_Names, clean_tweet)
-                        for name in tweet_names:
-
-                            name = name.lower()
-                            name_token = word_tokenize(name)
-                            dictName = name
-                            if len(name_token) > 1:
-                                first_name = name_token[0]
-                                last_name = name_token[-1]
-
-                                if first_name in names_lower and last_name not in ' '.join(nominees):
-
-                                    if first_name not in award_name and last_name not in award_name:
-
-                                        if dictName not in presentersCount.keys():
-
-                                            presentersCount[dictName] = 1
-
-                                        else:
-
-                                            presentersCount[dictName] += 1
+                lower_clean_tweet = lower_case_tweet(clean_tweet)
+                award_name = award
+                award_words = AWARDS_LISTS[award_name][0]
+                award_not_words = AWARDS_LISTS[award_name][1]
+                award_either_words = AWARDS_LISTS[award_name][2]
 
 
+                if all([word in lower_clean_tweet for word in award_words])\
+                   and not( any([not_word in lower_clean_tweet for not_word in award_not_words]))\
+                   and ((len(award_either_words) == 0) or any([either_word in lower_clean_tweet for either_word in award_either_words])):
 
-            presenters_selected = sorted(presentersCount.items(), key=operator.itemgetter(1), reverse=True)
+                    tweet_names = re.findall(re_Names, clean_tweet)
+                    for name in tweet_names:
 
-            if len(presenters_selected) > 1:
+                        name = name.lower()
+                        name_token = word_tokenize(name)
+                        dictName = name
+                        if len(name_token) > 1:
+                            first_name = name_token[0]
+                            last_name = name_token[-1]
 
-                if float(presenters_selected[1][1]) / presenters_selected[0][1] < 0.5:
+                            if first_name in names_lower and last_name not in ' '.join(nominees):
 
-                    presenters_selected = [str(presenters_selected[0][0])]
-                else:
+                                if first_name not in award_name and last_name not in award_name:
 
-                    presenters_selected = [str(presenters_selected[0][0]), str(presenters_selected[1][0])]
-            elif len(presenters_selected) == 1:
+                                    if dictName not in presentersCount.keys():
+
+                                        presentersCount[dictName] = 1
+
+                                    else:
+
+                                        presentersCount[dictName] += 1
+
+
+
+        presenters_selected = sorted(presentersCount.items(), key=operator.itemgetter(1), reverse=True)
+
+        if len(presenters_selected) > 1:
+
+            if float(presenters_selected[1][1]) / presenters_selected[0][1] < 0.5:
 
                 presenters_selected = [str(presenters_selected[0][0])]
+            else:
 
-            presentersFull.append({award :  presenters_selected})
+                presenters_selected = [str(presenters_selected[0][0]), str(presenters_selected[1][0])]
+        elif len(presenters_selected) == 1:
+
+            presenters_selected = [str(presenters_selected[0][0])]
+
+        presentersFull.append({award :  presenters_selected})
 
     return presentersFull
 
@@ -3114,12 +3086,20 @@ def pre_ceremony():
         print 'Reading Golden Globes tweets from %s...' % year
 
         cased_clean_tweets_path = path = './cased_clean_tweets%s.json' % year
-        raw_tweets = load_data(year)
-        cased_tweets = presenters_remove_stop_words_all(raw_tweets)
+        
+        if os.path.isfile(cased_clean_tweets_path):
+            
+            with open(cased_clean_tweets_path, 'r') as cased_tweets_file:
+                cased_tweets = json.load(cased_tweets_file)
+        else:
+            raw_tweets = load_data(year)
+            cased_tweets = presenters_remove_stop_words_all(raw_tweets)
+            
+            with open(cased_clean_tweets_path, 'w') as cased_tweets_file:
 
-        with open(cased_clean_tweets_path, 'w') as cased_tweets_file:
+                json.dump(cased_tweets, cased_tweets_file)
+            
 
-            json.dump(cased_tweets, cased_tweets_file)
 
     print "Pre-ceremony processing complete."
     return
