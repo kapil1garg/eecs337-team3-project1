@@ -22,7 +22,6 @@ unistopwords = ['real', 'ever', 'americans', 'goldenglobes', 'acting', 'reality'
 bistopwords = ['my wife', 'my husband', 'the last', 'the other', 'the show', 'the goldenglobes', 'the nominees', 'the oscars', 'any other', 'motion picture']
 pronouns = ['he', 'she', 'it', 'they', 'this', 'that', 'these', 'those', 'there']
 verbs = ['do', 'does', 'will', 'has', 'may', 'might']
-singers = ['adele','taylor swift']
 
 OFFICIAL_AWARDS = ['cecil b. demille award',
                    'best motion picture - drama',
@@ -133,9 +132,6 @@ AWARDS_LISTS = {'cecil b. demille award': [['cecil', 'demille', 'award'], [], []
                 'best performance by an actor in a mini-series or motion picture made for television' : [['best', 'actor', 'television'], [], ['mini series', 'motion picture']],
                 'best performance by an actress in a supporting role in a series, mini-series or motion picture made for television' : [['best', 'actress', 'supporting', 'television'], [], [' mini ', ' series ', 'motion picture']], # series OR mini series OR motion picture
                 'best performance by an actor in a supporting role in a series, mini-series or motion picture made for television' : [['best', 'actor', 'supporting', 'television'], [], [' mini ', ' series ', 'motion picture']]} # series OR mini series OR motion picture
-
-MALE_NAMES = nltk.corpus.names.words('male.txt')
-FEMALE_NAMES = nltk.corpus.names.words('female.txt')
 
 SENTIMENT_DICT = {
     'abandon': 'negative', 'abandoned': 'negative', 'abandonment': 'negative', 'abase': 'negative',
@@ -2023,8 +2019,6 @@ def lower_case_all(tweets):
     re_retweet = re.compile('rt', re.IGNORECASE)
     return [lower_case_tweet(tweet) for tweet in tweets if not re.match(re_retweet, tweet)]
 
-NAMES = set(lower_case_all(MALE_NAMES + FEMALE_NAMES))
-
 def presenters_remove_stop_words_all(tweets):
     tweets = copy.deepcopy(tweets)
     presenter_stop_words = nltk.corpus.stopwords.words('english')
@@ -2056,7 +2050,7 @@ def trim_data(raw_data):
         tweets.append(remove_hashtags(tweet))
     return tweets
 
-def getMovieTitles(year):
+def get_movie_titles(year):
     worldMovies = []
     page = requests.get('https://en.wikipedia.org/wiki/%d_in_film' % (int(year) - 1))
     tree = html.fromstring(page.content)
@@ -2072,7 +2066,7 @@ def getMovieTitles(year):
                 continue;
     return worldMovies
 
-def getNameDictionary(gender, subtitle=''):
+def get_name_dictionary(gender, subtitle=''):
     nameList = []
 
     page = requests.get('http://names.mongabay.com/%s_names%s.htm' % (gender, subtitle))
@@ -2087,79 +2081,56 @@ def getNameDictionary(gender, subtitle=''):
                 nameList.append(x.lower())
     return nameList
 
-def candidateCheck(candidate):
-    if not candidate:
+def candidate_check(candidate):
+    if not candidate or 'goldenglobe' in candidate or 'motion picture' in candidate:
         return ''
-    if 'goldenglobe' in candidate:
-        return ''
-    if 'motion picture' in candidate:
-        return ''
+
     candidate = re.sub(r'\bblah\b', '', candidate)
     tokens = nltk.word_tokenize(candidate)
     tokens_length = len(tokens)
+    new_combined_string = ' '.join(tokens)
+
     if tokens[-1] in verbs:
         del tokens[-1]
+        tokens_length = tokens_length - 1
+
     for token in tokens:
         if token in ['comedy', 'musical', 'drama', 'supporting']:
             return ''
-    if tokens_length>=7:
+    if tokens_length >= 7:
         return ''
-    elif tokens_length==1 and tokens[0] in (stopwords+unistopwords+pronouns):
+    elif tokens_length == 1 and tokens[0] in (stopwords + unistopwords + pronouns):
         return ''
-    elif tokens_length==2 and ' '.join(tokens) in bistopwords:
+    elif tokens_length == 2 and new_combined_string in bistopwords:
         return ''
-    elif tokens_length >1 and tokens[0] in pronouns:
+    elif tokens_length > 1 and tokens[0] in pronouns:
         return ''
-    return ' '.join(tokens)
+    return new_combined_string
 
-def candidatePreprocess(candidates, tweets):
-    frequency = []
-    for candidate in candidates:
-        if candidate not in singers:
-            frequency.append([candidate, 0])
+def candidate_preprocess(candidates, tweets):
+    frequency = {candidate: 0 for candidate in candidates}
 
     for tweet in tweets:
         for candidate in frequency:
-            if candidate[0] in tweet:
-                candidate[1]+=1
+            if candidate in tweet:
+                frequency[candidate] += 1
 
-    passedCandidates = [x[0] for x in frequency if x[1]>19]
-    return passedCandidates
+    passed_candidates = [candidate for candidate in frequency if frequency[candidate] > 19]
+    return passed_candidates
 
-def getRawCandidates(general_patterns, tweets):
+def get_raw_candidates(general_patterns, tweets):
     candidates = []
-    for pattern in general_patterns:
-        for tweet in tweets:
+
+    for tweet in tweets:
+        for pattern in general_patterns:
             matches = re.findall(pattern, tweet)
             for match in matches:
-                match = candidateCheck(match)
-                if match:
+                if candidate_check(match):
                     candidates.append(match)
-    candidates = list(set(candidates))
-    candidates = candidatePreprocess(candidates, tweets)
+    candidates = candidate_preprocess(candidates, tweets)
     return candidates
 
-def getCandidates(raw_candidates, tweets):
-    # check existance
-    candidates = []
-    for candidate in raw_candidates:
-        for tweet in tweets:
-            if candidate in tweet:
-                candidates.append(candidate)
-                break
-    # remove over lapping
-    passlist = []
-    for x in candidates:
-        overLap = False
-        for y in candidates:
-            if x != y and x in y:
-                overLap = True
-                break
-        if not overLap:
-            passlist.append(x)
-    return passlist
-
-def getHumanCandidates(candidates, namelist):
+def get_human_candidates(candidates, namelist):
     passlist = []
     for candidate in candidates:
         tokens = nltk.word_tokenize(candidate)
@@ -2173,7 +2144,7 @@ def getHumanCandidates(candidates, namelist):
         passlist.append(candidate)
     return passlist
 
-def getNonHumanCandidates(candidates, namelist):
+def get_nonhuman_candidates(candidates, namelist):
     passlist = []
     for candidate in candidates:
         tokens = nltk.word_tokenize(candidate)
@@ -2185,7 +2156,7 @@ def getNonHumanCandidates(candidates, namelist):
         passlist.append(candidate)
     return passlist
 
-def getMovieCandidates(candidates, lastFiveYearMovie):
+def get_movie_candidates(candidates, lastFiveYearMovie):
     passlist = []
     for candidate in candidates:
         if candidate in lastFiveYearMovie:
@@ -2193,7 +2164,7 @@ def getMovieCandidates(candidates, lastFiveYearMovie):
     return passlist
 
 # keywords is of the relationship or, while no words is and
-def getTargetTweets(tweets, keywords, nowords):
+def get_target_tweets(tweets, keywords, nowords):
     targets = []
     for tweet in tweets:
         status = False
@@ -2211,215 +2182,228 @@ def getTargetTweets(tweets, keywords, nowords):
             targets.append(tweet)
     return targets
 
-def getOrderedCandidates(keywords, nowords, candidates, tweets):
-    frequency = [[candidate, 0] for candidate in candidates]
-    tweets = getTargetTweets(tweets, keywords, nowords)
+def get_ordered_candidates(keywords, nowords, candidates, tweets):
+    frequency = {candidate: 0 for candidate in candidates}
+
     for tweet in tweets:
-        for candidate in frequency:
-            if candidate[0] in tweet:
-                candidate[1]+=1
-    result = sorted(frequency, key=lambda x:x[1], reverse=True)
-    result = [x[0] for x in result]
+        status = False
+        for keyword in keywords:
+            if keyword in tweet:
+                status = True
+                break
+        if not status:
+            continue
+        for noword in nowords:
+            if noword in tweet:
+                status = False
+                break
+        if status:
+            for candidate in frequency:
+                if candidate in tweet:
+                    frequency[candidate] += 1
+
+    result = [candidate for candidate in sorted(frequency.items(), key=operator.itemgetter(1))]
     return result
 
 def get_demille(general_patterns, tweets, female_name, male_name):
     # first got all the candidate
-    raw_candidates = getRawCandidates(general_patterns, tweets)
-    candidates = getRawCandidates(raw_candidates, tweets)
-    candidates = getOrderedCandidates(['demille', 'cecil'], [], candidates, tweets)
-    candidates = getHumanCandidates(candidates, female_name+male_name)
+    raw_candidates = get_raw_candidates(general_patterns, tweets)
+    candidates = get_raw_candidates(raw_candidates, tweets)
+    candidates = get_ordered_candidates(['demille', 'cecil'], [], candidates, tweets)
+    candidates = get_human_candidates(candidates, female_name+male_name)
     return candidates[0]
 
 def get_drama_movie(general_patterns, tweets, lastFiveYearMovie):
-    raw_candidates = getRawCandidates(general_patterns, tweets)
-    candidates = getRawCandidates(raw_candidates, tweets)
-    candidates = getOrderedCandidates(['drama'], ['television', 'tv', 'series', 'foreign'], candidates, tweets)
-    candidates = getMovieCandidates(candidates, lastFiveYearMovie)
+    raw_candidates = get_raw_candidates(general_patterns, tweets)
+    candidates = raw_candidates
+    # candidates = get_raw_candidates(raw_candidates, tweets)
+    candidates = get_ordered_candidates(['drama'], ['television', 'tv', 'series', 'foreign'], candidates, tweets)
+    candidates = get_movie_candidates(candidates, lastFiveYearMovie)
     #print candidates
     return candidates[:5]
 
 def get_drama_movie_actress(special_pattern, tweets, female_name):
-    raw_candidates = getRawCandidates(special_pattern, tweets)
-    candidates = getRawCandidates(raw_candidates, tweets)
-    candidates = getOrderedCandidates(['drama'], ['television', 'tv', 'series', 'supporting'], candidates, tweets)
-    candidates = getHumanCandidates(candidates, female_name)
+    raw_candidates = get_raw_candidates(special_pattern, tweets)
+    candidates = get_raw_candidates(raw_candidates, tweets)
+    candidates = get_ordered_candidates(['drama'], ['television', 'tv', 'series', 'supporting'], candidates, tweets)
+    candidates = get_human_candidates(candidates, female_name)
     print candidates
     return candidates[:5]
 
 def get_drama_movie_actor(special_pattern, tweets, male_name):
-    raw_candidates = getRawCandidates(special_pattern, tweets)
-    candidates = getRawCandidates(raw_candidates, tweets)
-    candidates = getOrderedCandidates(['drama'], ['television', 'tv', 'series', 'supporting'], candidates, tweets)
-    candidates = getHumanCandidates(candidates, male_name)
+    raw_candidates = get_raw_candidates(special_pattern, tweets)
+    candidates = get_raw_candidates(raw_candidates, tweets)
+    candidates = get_ordered_candidates(['drama'], ['television', 'tv', 'series', 'supporting'], candidates, tweets)
+    candidates = get_human_candidates(candidates, male_name)
     print candidates
     return candidates[:5]
 
 def get_comedy_movie(special_pattern, tweets, lastFiveYearMovie):
-    raw_candidates = getRawCandidates(special_pattern, tweets)
-    candidates = getRawCandidates(raw_candidates, tweets)
-    candidates = getOrderedCandidates(['comedy', 'musical'], ['television', 'tv', 'series', 'drama', 'foreign'], candidates, tweets)
-    candidates = getMovieCandidates(candidates, lastFiveYearMovie)
+    raw_candidates = get_raw_candidates(special_pattern, tweets)
+    candidates = get_raw_candidates(raw_candidates, tweets)
+    candidates = get_ordered_candidates(['comedy', 'musical'], ['television', 'tv', 'series', 'drama', 'foreign'], candidates, tweets)
+    candidates = get_movie_candidates(candidates, lastFiveYearMovie)
     print candidates
     return candidates[:5]
 
 def get_comedy_movie_actress(special_pattern, tweets, female_name):
-    raw_candidates = getRawCandidates(special_pattern, tweets)
-    candidates = getRawCandidates(raw_candidates, tweets)
-    candidates = getOrderedCandidates(['comedy', 'musical'], ['television', 'tv', 'series', 'drama', 'foreign'], candidates, tweets)
-    candidates = getHumanCandidates(candidates, female_name)
+    raw_candidates = get_raw_candidates(special_pattern, tweets)
+    candidates = get_raw_candidates(raw_candidates, tweets)
+    candidates = get_ordered_candidates(['comedy', 'musical'], ['television', 'tv', 'series', 'drama', 'foreign'], candidates, tweets)
+    candidates = get_human_candidates(candidates, female_name)
     print candidates
     return candidates[:5]
 
 def get_comedy_movie_actor(special_pattern, tweets, male_name):
-    raw_candidates = getRawCandidates(special_pattern, tweets)
-    candidates = getRawCandidates(raw_candidates, tweets)
-    candidates = getOrderedCandidates(['comedy', 'musical'], ['television', 'tv', 'series', 'drama', 'foreign'], candidates, tweets)
-    candidates = getHumanCandidates(candidates, male_name)
+    raw_candidates = get_raw_candidates(special_pattern, tweets)
+    candidates = get_raw_candidates(raw_candidates, tweets)
+    candidates = get_ordered_candidates(['comedy', 'musical'], ['television', 'tv', 'series', 'drama', 'foreign'], candidates, tweets)
+    candidates = get_human_candidates(candidates, male_name)
     print candidates
     return candidates[:5]
 
 def get_animated_feature_movie(special_pattern, tweets, lastFiveYearMovie):
-    raw_candidates = getRawCandidates(special_pattern, tweets)
-    candidates = getRawCandidates(raw_candidates, tweets)
-    candidates = getOrderedCandidates(['animated feature', 'cartoon', 'animated film'], ['television', 'tv', 'series', 'drama', 'musical'], candidates, tweets)
-    candidates = getMovieCandidates(candidates, lastFiveYearMovie)
+    raw_candidates = get_raw_candidates(special_pattern, tweets)
+    candidates = get_raw_candidates(raw_candidates, tweets)
+    candidates = get_ordered_candidates(['animated feature', 'cartoon', 'animated film'], ['television', 'tv', 'series', 'drama', 'musical'], candidates, tweets)
+    candidates = get_movie_candidates(candidates, lastFiveYearMovie)
     return candidates[:5]
 
 def get_foreign_language_movie(special_pattern, tweets, lastFiveYearMovie):
-    raw_candidates = getRawCandidates(special_pattern, tweets)
-    candidates = getRawCandidates(raw_candidates, tweets)
-    candidates = getOrderedCandidates(['foreign', 'language', 'exotic'], ['television', 'tv', 'series', 'drama', 'musical'], candidates, tweets)
-    candidates = getMovieCandidates(candidates, lastFiveYearMovie)
+    raw_candidates = get_raw_candidates(special_pattern, tweets)
+    candidates = get_raw_candidates(raw_candidates, tweets)
+    candidates = get_ordered_candidates(['foreign', 'language', 'exotic'], ['television', 'tv', 'series', 'drama', 'musical'], candidates, tweets)
+    candidates = get_movie_candidates(candidates, lastFiveYearMovie)
     return candidates[:5]
 
 def get_movie_supporting_actress(special_pattern, tweets, female_name):
-    raw_candidates = getRawCandidates(special_pattern, tweets)
-    candidates = getRawCandidates(raw_candidates, tweets)
-    candidates = getOrderedCandidates(['supporting'], ['television', 'tv', 'series', 'mini'], candidates, tweets)
-    candidates = getHumanCandidates(candidates, female_name)
+    raw_candidates = get_raw_candidates(special_pattern, tweets)
+    candidates = get_raw_candidates(raw_candidates, tweets)
+    candidates = get_ordered_candidates(['supporting'], ['television', 'tv', 'series', 'mini'], candidates, tweets)
+    candidates = get_human_candidates(candidates, female_name)
     return candidates[:5]
 
 def get_movie_supporting_actor(special_pattern, tweets, male_name):
-    raw_candidates = getRawCandidates(special_pattern, tweets)
-    candidates = getRawCandidates(raw_candidates, tweets)
-    candidates = getOrderedCandidates(['supporting'], ['television', 'tv', 'series', 'mini'], candidates, tweets)
-    candidates = getHumanCandidates(candidates, male_name)
+    raw_candidates = get_raw_candidates(special_pattern, tweets)
+    candidates = get_raw_candidates(raw_candidates, tweets)
+    candidates = get_ordered_candidates(['supporting'], ['television', 'tv', 'series', 'mini'], candidates, tweets)
+    candidates = get_human_candidates(candidates, male_name)
     return candidates[:5]
 
 def get_director(special_pattern, tweets, nameList):
-    raw_candidates = getRawCandidates(special_pattern, tweets)
-    candidates = getRawCandidates(raw_candidates, tweets)
-    candidates = getOrderedCandidates(['director'], ['television', 'tv', 'series', 'mini'], candidates, tweets)
-    candidates = getHumanCandidates(candidates, nameList)
+    raw_candidates = get_raw_candidates(special_pattern, tweets)
+    candidates = get_raw_candidates(raw_candidates, tweets)
+    candidates = get_ordered_candidates(['director'], ['television', 'tv', 'series', 'mini'], candidates, tweets)
+    candidates = get_human_candidates(candidates, nameList)
     return candidates[:5]
 
 def get_screenplay(special_pattern, tweets, namelist):
-    raw_candidates = getRawCandidates(special_pattern, tweets)
-    candidates = getRawCandidates(raw_candidates, tweets)
-    candidates = getOrderedCandidates(['screenplay'], ['television', 'tv', 'series', 'mini'], candidates, tweets)
-    candidates = getHumanCandidates(candidates, namelist)
+    raw_candidates = get_raw_candidates(special_pattern, tweets)
+    candidates = get_raw_candidates(raw_candidates, tweets)
+    candidates = get_ordered_candidates(['screenplay'], ['television', 'tv', 'series', 'mini'], candidates, tweets)
+    candidates = get_human_candidates(candidates, namelist)
     return candidates[:5]
 
 def get_original_score(special_pattern, tweets, namelist):
-    raw_candidates = getRawCandidates(special_pattern, tweets)
-    candidates = getRawCandidates(raw_candidates, tweets)
-    candidates = getOrderedCandidates(['original score'], ['television', 'tv', 'series', 'mini'], candidates, tweets)
-    candidates = getNonHumanCandidates(candidates, namelist)
+    raw_candidates = get_raw_candidates(special_pattern, tweets)
+    candidates = get_raw_candidates(raw_candidates, tweets)
+    candidates = get_ordered_candidates(['original score'], ['television', 'tv', 'series', 'mini'], candidates, tweets)
+    candidates = get_nonhuman_candidates(candidates, namelist)
     return candidates[:5]
 
 def get_original_song(special_pattern, tweets, namelist):
-    raw_candidates = getRawCandidates(special_pattern, tweets)
-    candidates = getRawCandidates(raw_candidates, tweets)
-    candidates = getOrderedCandidates(['original song'], ['television', 'tv', 'series'], candidates, tweets)
-    candidates = getNonHumanCandidates(candidates, namelist)
+    raw_candidates = get_raw_candidates(special_pattern, tweets)
+    candidates = get_raw_candidates(raw_candidates, tweets)
+    candidates = get_ordered_candidates(['original song'], ['television', 'tv', 'series'], candidates, tweets)
+    candidates = get_nonhuman_candidates(candidates, namelist)
     return candidates[:5]
 
 def get_drama_series(special_pattern, tweets, nameList):
-    raw_candidates = getRawCandidates(special_pattern, tweets)
-    candidates = getRawCandidates(raw_candidates, tweets)
-    candidates = getOrderedCandidates(['television', 'tv', 'series'], ['movie', 'film', 'motion picture'], candidates, tweets)
-    candidates = getOrderedCandidates(['drama'], [], candidates, tweets)
-    candidates = getNonHumanCandidates(candidates, nameList)
+    raw_candidates = get_raw_candidates(special_pattern, tweets)
+    candidates = get_raw_candidates(raw_candidates, tweets)
+    candidates = get_ordered_candidates(['television', 'tv', 'series'], ['movie', 'film', 'motion picture'], candidates, tweets)
+    candidates = get_ordered_candidates(['drama'], [], candidates, tweets)
+    candidates = get_nonhuman_candidates(candidates, nameList)
     return candidates[:5]
 
 def get_drama_series_actress(special_pattern, tweets, female_name):
-    raw_candidates = getRawCandidates(special_pattern, tweets)
-    candidates = getRawCandidates(raw_candidates, tweets)
-    candidates = getOrderedCandidates(['television', 'tv', 'series'], ['movie', 'film', 'motion picture'], candidates, tweets)
-    candidates = getOrderedCandidates(['drama'], [], candidates, tweets)
-    candidates = getHumanCandidates(candidates, female_name)
+    raw_candidates = get_raw_candidates(special_pattern, tweets)
+    candidates = get_raw_candidates(raw_candidates, tweets)
+    candidates = get_ordered_candidates(['television', 'tv', 'series'], ['movie', 'film', 'motion picture'], candidates, tweets)
+    candidates = get_ordered_candidates(['drama'], [], candidates, tweets)
+    candidates = get_human_candidates(candidates, female_name)
     return candidates[:5]
 
 def get_drama_series_actor(special_pattern, tweets, male_name):
-    raw_candidates = getRawCandidates(special_pattern, tweets)
-    candidates = getRawCandidates(raw_candidates, tweets)
-    candidates = getOrderedCandidates(['television', 'tv', 'series'], ['movie', 'film', 'motion picture'], candidates, tweets)
-    candidates = getOrderedCandidates(['drama'], [], candidates, tweets)
-    candidates = getHumanCandidates(candidates, male_name)
+    raw_candidates = get_raw_candidates(special_pattern, tweets)
+    candidates = get_raw_candidates(raw_candidates, tweets)
+    candidates = get_ordered_candidates(['television', 'tv', 'series'], ['movie', 'film', 'motion picture'], candidates, tweets)
+    candidates = get_ordered_candidates(['drama'], [], candidates, tweets)
+    candidates = get_human_candidates(candidates, male_name)
     return candidates[:5]
 
 def get_comedy_series(special_pattern, tweets, namelist):
-    raw_candidates = getRawCandidates(special_pattern, tweets)
-    candidates = getRawCandidates(raw_candidates, tweets)
-    candidates = getOrderedCandidates(['television', 'tv', 'series'], ['movie', 'film', 'motion picture'], candidates, tweets)
-    candidates = getOrderedCandidates(['musical', 'comedy'], ['drama'], candidates, tweets)
-    candidates = getNonHumanCandidates(candidates, namelist)
+    raw_candidates = get_raw_candidates(special_pattern, tweets)
+    candidates = get_raw_candidates(raw_candidates, tweets)
+    candidates = get_ordered_candidates(['television', 'tv', 'series'], ['movie', 'film', 'motion picture'], candidates, tweets)
+    candidates = get_ordered_candidates(['musical', 'comedy'], ['drama'], candidates, tweets)
+    candidates = get_nonhuman_candidates(candidates, namelist)
     return candidates[:5]
 
 def get_comedy_series_actress(special_pattern, tweets, female_name):
-    raw_candidates = getRawCandidates(special_pattern, tweets)
-    candidates = getRawCandidates(raw_candidates, tweets)
-    candidates = getOrderedCandidates(['television', 'tv', 'series'], ['movie', 'film', 'motion picture'], candidates, tweets)
-    candidates = getOrderedCandidates(['musical', 'comedy'], ['drama', 'supporting'], candidates, tweets)
-    candidates = getHumanCandidates(candidates, female_name)
+    raw_candidates = get_raw_candidates(special_pattern, tweets)
+    candidates = get_raw_candidates(raw_candidates, tweets)
+    candidates = get_ordered_candidates(['television', 'tv', 'series'], ['movie', 'film', 'motion picture'], candidates, tweets)
+    candidates = get_ordered_candidates(['musical', 'comedy'], ['drama', 'supporting'], candidates, tweets)
+    candidates = get_human_candidates(candidates, female_name)
     return candidates[:5]
 
 def get_comedy_movie_actor(special_pattern, tweets, male_name):
-    raw_candidates = getRawCandidates(special_pattern, tweets)
-    candidates = getRawCandidates(raw_candidates, tweets)
-    candidates = getOrderedCandidates(['television', 'tv', 'series'], ['movie', 'film', 'motion picture'], candidates, tweets)
-    candidates = getOrderedCandidates(['musical', 'comedy'], ['drama', 'supporting'], candidates, tweets)
-    candidates = getHumanCandidates(candidates, male_name)
+    raw_candidates = get_raw_candidates(special_pattern, tweets)
+    candidates = get_raw_candidates(raw_candidates, tweets)
+    candidates = get_ordered_candidates(['television', 'tv', 'series'], ['movie', 'film', 'motion picture'], candidates, tweets)
+    candidates = get_ordered_candidates(['musical', 'comedy'], ['drama', 'supporting'], candidates, tweets)
+    candidates = get_human_candidates(candidates, male_name)
     return candidates[:5]
 
 def get_mini_series(special_pattern, tweets, namelist):
-    raw_candidates = getRawCandidates(special_pattern, tweets)
-    candidates = getRawCandidates(raw_candidates, tweets)
-    candidates = getOrderedCandidates(['television', 'tv', 'series', 'mini'], ['movie', 'film', 'motion picture'], candidates, tweets)
-    candidates = getOrderedCandidates([], ['drama', 'comedy', 'musical'], candidates, tweets)
-    candidates = getNonHumanCandidates(candidates, namelist)
+    raw_candidates = get_raw_candidates(special_pattern, tweets)
+    candidates = get_raw_candidates(raw_candidates, tweets)
+    candidates = get_ordered_candidates(['television', 'tv', 'series', 'mini'], ['movie', 'film', 'motion picture'], candidates, tweets)
+    candidates = get_ordered_candidates([], ['drama', 'comedy', 'musical'], candidates, tweets)
+    candidates = get_nonhuman_candidates(candidates, namelist)
     return candidates[:5]
 
 def get_mini_series_actress(special_pattern, tweets, female_name):
-    raw_candidates = getRawCandidates(special_pattern, tweets)
-    candidates = getRawCandidates(raw_candidates, tweets)
-    candidates = getOrderedCandidates(['television', 'tv', 'series'], ['movie', 'film', 'motion picture'], candidates, tweets)
-    candidates = getOrderedCandidates([], ['drama', 'comedy', 'musical'], candidates, tweets)
-    candidates = getHumanCandidates(candidates, female_name)
+    raw_candidates = get_raw_candidates(special_pattern, tweets)
+    candidates = get_raw_candidates(raw_candidates, tweets)
+    candidates = get_ordered_candidates(['television', 'tv', 'series'], ['movie', 'film', 'motion picture'], candidates, tweets)
+    candidates = get_ordered_candidates([], ['drama', 'comedy', 'musical'], candidates, tweets)
+    candidates = get_human_candidates(candidates, female_name)
     return candidates[:5]
 
 def get_mini_series_actor(special_pattern, tweets, male_name):
-    raw_candidates = getRawCandidates(special_pattern, tweets)
-    candidates = getRawCandidates(raw_candidates, tweets)
-    candidates = getOrderedCandidates(['television', 'tv', 'series'], ['movie', 'film', 'motion picture'], candidates, tweets)
-    candidates = getOrderedCandidates([], ['drama', 'comedy', 'musical'], candidates, tweets)
-    candidates = getHumanCandidates(candidates, male_name)
+    raw_candidates = get_raw_candidates(special_pattern, tweets)
+    candidates = get_raw_candidates(raw_candidates, tweets)
+    candidates = get_ordered_candidates(['television', 'tv', 'series'], ['movie', 'film', 'motion picture'], candidates, tweets)
+    candidates = get_ordered_candidates([], ['drama', 'comedy', 'musical'], candidates, tweets)
+    candidates = get_human_candidates(candidates, male_name)
     return candidates[:5]
 
 def get_nonmovie_supporting_actress(special_pattern, tweets, female_name):
-    raw_candidates = getRawCandidates(special_pattern, tweets)
-    candidates = getRawCandidates(raw_candidates, tweets)
-    candidates = getOrderedCandidates(['television', 'tv', 'series'], ['movie', 'film', 'motion picture'], candidates, tweets)
-    candidates = getOrderedCandidates(['supporting'], [], candidates, tweets)
-    candidates = getHumanCandidates(candidates, female_name)
+    raw_candidates = get_raw_candidates(special_pattern, tweets)
+    candidates = get_raw_candidates(raw_candidates, tweets)
+    candidates = get_ordered_candidates(['television', 'tv', 'series'], ['movie', 'film', 'motion picture'], candidates, tweets)
+    candidates = get_ordered_candidates(['supporting'], [], candidates, tweets)
+    candidates = get_human_candidates(candidates, female_name)
     return candidates[:5]
 
 def get_nonmovie_supporting_actor(special_pattern, tweets, male_name):
-    raw_candidates = getRawCandidates(special_pattern, tweets)
-    candidates = getRawCandidates(raw_candidates, tweets)
-    candidates = getOrderedCandidates(['television', 'tv', 'series'], ['movie', 'film', 'motion picture'], candidates, tweets)
-    candidates = getOrderedCandidates(['supporting'], [], candidates, tweets)
-    candidates = getHumanCandidates(candidates, male_name)
+    raw_candidates = get_raw_candidates(special_pattern, tweets)
+    candidates = get_raw_candidates(raw_candidates, tweets)
+    candidates = get_ordered_candidates(['television', 'tv', 'series'], ['movie', 'film', 'motion picture'], candidates, tweets)
+    candidates = get_ordered_candidates(['supporting'], [], candidates, tweets)
+    candidates = get_human_candidates(candidates, male_name)
     return candidates[:5]
 
 def get_hosts(year):
@@ -2684,9 +2668,9 @@ def get_nominees(year):
     raw_data = read_data(year)
     tweets = trim_data(raw_data)
     # two webpags for male and female name
-    female_name = getNameDictionary('female') + getNameDictionary('female', '1')
-    male_name = getNameDictionary('male') + getNameDictionary('male', '3') + getNameDictionary('male', '6') + ['christoph', 'hugh']
-    lastFiveYearMovie = getMovieTitles(int(year))+getMovieTitles(int(year)-1)+getMovieTitles(int(year)-2)+getMovieTitles(int(year)-3)+getMovieTitles(int(year)-4)
+    female_name = get_name_dictionary('female') + get_name_dictionary('female', '1')
+    male_name = get_name_dictionary('male') + get_name_dictionary('male', '3') + get_name_dictionary('male', '6') + ['christoph', 'hugh']
+    lastFiveYearMovie = get_movie_titles(int(year))+get_movie_titles(int(year)-1)+get_movie_titles(int(year)-2)+get_movie_titles(int(year)-3)+get_movie_titles(int(year)-4)
     lastFiveYearMovie = set(lastFiveYearMovie)
 
     general_patterns = [r'hop[(?:es?)(?:ing)](?:\sthat)?\s+(.*?)\sw[io]ns?',
@@ -2863,7 +2847,6 @@ def get_winner(year):
     names as keys, and each entry a list containing a single string.
     Do NOT change the name of this function or what it returns.
     """
-    # Your code here
     winners = {}
     nominees = get_nominees(year)
     for x in OFFICIAL_AWARDS:
@@ -2971,7 +2954,7 @@ def pre_ceremony():
     """
     print '\nBeginning pre-ceremony...\n'
 
-    years = [2013,2015]
+    years = [2013, 2015]
 
     for year in years:
         print 'Reading Golden Globes tweets from %s...' % year
