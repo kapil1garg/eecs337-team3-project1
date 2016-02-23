@@ -37,6 +37,24 @@ get_sentiments:
 Besides, when seeking for the nominees, we constructed a male namelist, female list and movie list of last five years by scraping the webpages. The name lists are from http://names.mongabay.com/ and the movie lists are gained from wikipedia page.
 
 // other citations if exists
+Python Libraries Imported:
+
+from __future__ import division
+import os.path
+import collections
+import operator
+import pprint
+import sys
+import json
+import re
+import string
+import copy
+import math
+import requests
+import nltk
+from nltk.corpus import names, stopwords
+from nltk.tokenize import *
+from lxml import html
 
 Finally, in the main function, we build a simple text user interface by infinite loops.
 
